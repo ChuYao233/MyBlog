@@ -31,33 +31,94 @@ let heading1Count = 1;
 
 const maxLevel = siteConfig.toc.depth;
 ---
-{isPostsRoute &&
-<table-of-contents class:list={[className, "group"]}>
-    {headings.filter((heading) => heading.depth < minDepth + maxLevel).map((heading) =>
-            <a href={`#${heading.slug}`} class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl
-        hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2
-    ">
-                <div class:list={["transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold",
-                    {
-                        "bg-[var(--toc-badge-bg)] text-[var(--btn-content)]": heading.depth == minDepth,
-                        "ml-4": heading.depth == minDepth + 1,
-                        "ml-8": heading.depth == minDepth + 2,
+{isPostsRoute && (() => {
+    const filteredHeadings = headings.filter((heading) => heading.depth < minDepth + maxLevel);
+    
+    // Build nested list structure
+    function buildTOCItems(headings: MarkdownHeading[]): any[] {
+        const items: any[] = [];
+        let i = 0;
+        
+        while (i < headings.length) {
+            const heading = headings[i];
+            const relativeDepth = heading.depth - minDepth;
+            
+            if (relativeDepth === 0) {
+                // Level 1 heading
+                const children: any[] = [];
+                let j = i + 1;
+                
+                // Collect level 2 children
+                while (j < headings.length && headings[j].depth === minDepth + 1) {
+                    const childHeading = headings[j];
+                    const grandChildren: any[] = [];
+                    let k = j + 1;
+                    
+                    // Collect level 3 grandchildren
+                    while (k < headings.length && headings[k].depth === minDepth + 2) {
+                        const grandChildHeading = headings[k];
+                        grandChildren.push(
+                            <li>
+                                <a href={`#${grandChildHeading.slug}`} class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2">
+                                    <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold">
+                                        <div class="transition w-1.5 h-1.5 rounded-sm bg-black/5 dark:bg-white/10"></div>
+                                    </div>
+                                    <div class="transition text-sm text-30">{removeTailingHash(grandChildHeading.text)}</div>
+                                </a>
+                            </li>
+                        );
+                        k++;
                     }
-                ]}
-                >
-                    {heading.depth == minDepth && heading1Count++}
-                    {heading.depth == minDepth + 1 && <div class="transition w-2 h-2 rounded-[0.1875rem] bg-[var(--toc-badge-bg)]"></div>}
-                    {heading.depth == minDepth + 2 && <div class="transition w-1.5 h-1.5 rounded-sm bg-black/5 dark:bg-white/10"></div>}
-                </div>
-                <div class:list={["transition text-sm", {
-                    "text-50": heading.depth == minDepth || heading.depth == minDepth + 1,
-                    "text-30": heading.depth == minDepth + 2,
-                }]}>{removeTailingHash(heading.text)}</div>
-            </a>
-    )}
-    <div id="active-indicator" style="opacity: 0" class:list={[{'hidden': headings.length == 0}, "-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all " +
-        "group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"]}></div>
-</table-of-contents>}
+                    
+                    children.push(
+                        <li>
+                            <a href={`#${childHeading.slug}`} class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2">
+                                <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold">
+                                    <div class="transition w-2 h-2 rounded-[0.1875rem] bg-[var(--toc-badge-bg)]"></div>
+                                </div>
+                                <div class="transition text-sm text-50">{removeTailingHash(childHeading.text)}</div>
+                            </a>
+                            {grandChildren.length > 0 && <ul class="pl-4 space-y-1">{grandChildren}</ul>}
+                        </li>
+                    );
+                    
+                    j = k;
+                }
+                
+                const count = heading1Count++;
+                items.push(
+                    <li>
+                        <a href={`#${heading.slug}`} class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2">
+                            <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold bg-[var(--toc-badge-bg)] text-[var(--btn-content)]">
+                                {count}
+                            </div>
+                            <div class="transition text-sm text-50">{removeTailingHash(heading.text)}</div>
+                        </a>
+                        {children.length > 0 && <ul class="pl-4 space-y-1">{children}</ul>}
+                    </li>
+                );
+                
+                i = j;
+            } else {
+                i++;
+            }
+        }
+        
+        return items;
+    }
+    
+    const listItems = buildTOCItems(filteredHeadings);
+    
+    return (
+        <table-of-contents class:list={[className, "group", "block", "relative", "z-0", "bg-[var(--float-panel-bg-opaque)]", "rounded-xl", "p-2"]}>
+            <ol class="space-y-1">
+                {listItems}
+            </ol>
+            <div id="active-indicator" class:list={[{'hidden': headings.length == 0}, "-z-10 absolute bg-[var(--toc-btn-hover)] left-2 right-2 rounded-xl transition-all " +
+                "group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"]} style="display: none"></div>
+        </table-of-contents>
+    );
+})()}
 
 <script>
 class TableOfContents extends HTMLElement {
@@ -113,13 +174,11 @@ class TableOfContents extends HTMLElement {
             i--;
         }
         if (min > max) {
-            this.activeIndicator?.setAttribute("style", `opacity: 0`);
+            this.activeIndicator?.setAttribute("style", `display: none`);
         } else {
-            let parentOffset = this.tocEl?.getBoundingClientRect().top || 0;
-            let scrollOffset = this.tocEl?.scrollTop || 0;
-            let top = this.tocEntries[min].getBoundingClientRect().top - parentOffset + scrollOffset;
-            let bottom = this.tocEntries[max].getBoundingClientRect().bottom - parentOffset + scrollOffset;
-            this.activeIndicator?.setAttribute("style", `top: ${top}px; height: ${bottom - top}px`);
+            let top = this.tocEntries[min].offsetTop;
+            let bottom = this.tocEntries[max].offsetTop + this.tocEntries[max].offsetHeight;
+            this.activeIndicator?.setAttribute("style", `display: block; top: ${top}px; height: ${bottom - top}px`);
         }
     };
 

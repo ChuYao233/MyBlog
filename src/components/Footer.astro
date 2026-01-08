@@ -4,18 +4,127 @@ import { profileConfig } from "../config";
 import { url } from "../utils/url-utils";
 
 const currentYear = new Date().getFullYear();
+
+// 检测服务商
+function detectServiceProvider(): 'cloudflare' | 'esa' | 'edgeone' | null {
+    try {
+        // 在SSR模式下，Astro.request 可用
+        if (typeof Astro !== 'undefined' && Astro.request) {
+            const headers = Astro.request.headers;
+            
+            // 检测 Cloudflare
+            if (headers.get('cf-ray') || headers.get('cf-connecting-ip')) {
+                return 'cloudflare';
+            }
+            
+            // 检测阿里云ESA
+            const via = headers.get('via') || '';
+            const server = headers.get('server') || '';
+            if (via.toLowerCase().includes('esa') || server.toLowerCase().includes('esa') || 
+                headers.get('x-ali-esa-version') || headers.get('x-ali-esa-id')) {
+                return 'esa';
+            }
+            
+            // 检测腾讯EdgeOne
+            if (via.toLowerCase().includes('edgeone') || server.toLowerCase().includes('edgeone') ||
+                headers.get('x-edgeone-version') || headers.get('x-edgeone-id') ||
+                headers.get('x-edgeone-request-id')) {
+                return 'edgeone';
+            }
+        }
+    } catch (e) {
+        // 在SSG模式下，Astro.request 可能不可用
+        // 这种情况下，将在客户端通过JavaScript检测
+    }
+    
+    return null;
+}
+
+const serviceProvider = detectServiceProvider();
 ---
 
-<!--<div class="border-t border-[var(&#45;&#45;primary)] mx-16 border-dashed py-8 max-w-[var(&#45;&#45;page-width)] flex flex-col items-center justify-center px-6">-->
 <div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
-<!--<div class="transition bg-[oklch(92%_0.01_var(&#45;&#45;hue))] dark:bg-black rounded-2xl py-8 mt-4 mb-8 flex flex-col items-center justify-center px-6">-->
-<div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
+<div class="card-base card-shadow py-8 mb-12 flex flex-col items-center justify-center px-6">
     <div class="transition text-50 text-sm text-center">
-        &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss.xml')}>RSS</a> /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a><br>
-        Powered by
+        &copy; 2022 - <span id="copyright-year">{currentYear}</span> <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://space.bilibili.com/349638942">{profileConfig.name}</a> 版权所有
+        <br>
+        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss.xml')}>RSS</a>  /
+        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>网页地图</a>  /
+        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://creativecommons.org/licenses/by-nc-sa/4.0/"> CC BY-NC-SA 4.0</a><br>
+        <span class="inline-flex items-center gap-2">
+            <img src="/favicon/foot-ga.png" alt="公安备案" class="inline-block h-4 align-middle" />
+            川公网安备51080202020049号
+        </span>
+        <span class="inline-flex items-center gap-2">
+            <img src="/favicon/foot-icp.png" alt="ICP备案" class="inline-block h-4 align-middle" />
+            蜀ICP备2024102137号
+        </span>
+        <br>
+        由
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://astro.build">Astro</a> &
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/saicaca/fuwari">Fuwari</a>
+        <span id="service-provider-container">
+            {serviceProvider === 'cloudflare' && (
+                <>
+                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.cloudflare.com">
+                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="inline-block h-4 align-middle" />
+                        Cloudflare
+                    </a>
+                </>
+            )}
+            {serviceProvider === 'esa' && (
+                <>
+                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.aliyun.com/product/esa">
+                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="inline-block h-4 align-middle" />
+                        阿里云ESA
+                    </a>
+                </>
+            )}
+            {serviceProvider === 'edgeone' && (
+                <>
+                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://cloud.tencent.com/product/teo">
+                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="inline-block h-4 align-middle" />
+                        腾讯EdgeOne
+                    </a>
+                </>
+            )}
+        </span>
+        驱动
     </div>
 </div>
+
+<script>
+    // 客户端检测服务商（用于SSG模式或服务端检测失败时）
+    (async function() {
+        const container = document.getElementById('service-provider-container');
+        if (!container) return;
+        
+        // 如果服务端已经检测到了，就不需要客户端检测
+        if (container.innerHTML.trim() !== '') return;
+        
+        try {
+            const response = await fetch('/api/detect-provider');
+            const data = await response.json();
+            
+            if (data.provider === 'cloudflare') {
+                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.cloudflare.com">
+                    <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="inline-block h-4 align-middle" />
+                    Cloudflare
+                </a>`;
+            } else if (data.provider === 'esa') {
+                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.aliyun.com/product/esa">
+                    <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="inline-block h-4 align-middle" />
+                    阿里云ESA
+                </a>`;
+            } else if (data.provider === 'edgeone') {
+                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://cloud.tencent.com/product/teo">
+                    <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="inline-block h-4 align-middle" />
+                    腾讯EdgeOne
+                </a>`;
+            }
+        } catch (error) {
+            // 静默失败，不显示服务商logo
+            console.debug('Failed to detect service provider:', error);
+        }
+    })();
+</script>

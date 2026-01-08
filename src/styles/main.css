@@ -1,8 +1,28 @@
 @tailwind components;
 
+/* 页面背景图片 */
+html {
+    background-image: var(--background-image, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: var(--page-bg);
+}
+
 @layer components {
     .card-base {
-        @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg)] transition;
+        @apply rounded-[var(--radius-large)] overflow-hidden transition relative;
+        background-color: transparent;
+    }
+    .card-base::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: var(--card-bg);
+        opacity: 0.8;
+        border-radius: inherit;
+        z-index: -1;
     }
     h1, h2, h3, h4, h5, h6, p, a, span, li, ul, ol, blockquote, code, pre, table, th, td, strong {
         @apply transition;
@@ -31,8 +51,28 @@
     }
 
     .btn-card {
-        @apply transition flex items-center justify-center bg-[var(--card-bg)] hover:bg-[var(--btn-card-bg-hover)]
-        active:bg-[var(--btn-card-bg-active)]
+        @apply transition flex items-center justify-center relative;
+        background-color: transparent !important;
+    }
+    .btn-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-color: var(--card-bg);
+        opacity: 0.8;
+        border-radius: inherit;
+        z-index: 0;
+        transition: background-color 0.2s;
+    }
+    .btn-card > * {
+        position: relative;
+        z-index: 1;
+    }
+    .btn-card:hover::before {
+        background-color: var(--btn-card-bg-hover);
+    }
+    .btn-card:active::before {
+        background-color: var(--btn-card-bg-active);
     }
     .btn-card.disabled {
         @apply pointer-events-none text-black/10 dark:text-white/10
@@ -63,6 +103,10 @@
     .toc-hide,
     .toc-not-ready {
         @apply opacity-0 pointer-events-none
+    }
+
+    table-of-contents {
+        opacity: 0.85;
     }
 
     #toc-inner-wrapper {

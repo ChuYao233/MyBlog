@@ -1,0 +1,42 @@
+---
+
+import { getCollection } from "astro:content";
+import LinkCard from "@components/LinkCard.astro";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const allLinks = await getCollection("links");
+
+// 按名称排序
+const sortedLinks = allLinks.sort((a, b) => {
+	return a.data.name.localeCompare(b.data.name, "zh-CN");
+});
+---
+<MainGridLayout title="友链" description="友链">
+	<div class="w-full">
+		<div class="card-base z-10 px-9 py-6 mb-6">
+			<h1 class="text-3xl font-bold text-90 mb-2">友链</h1>
+			<p class="text-75">欢迎交换友链！如果你也想添加友链，请联系我。</p>
+		</div>
+		
+		{sortedLinks.length > 0 ? (
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				{sortedLinks.map((link, index) => (
+					<LinkCard
+						name={link.data.name}
+						url={link.data.url}
+						description={link.data.description}
+						avatar={link.data.avatar}
+						email={link.data.email}
+						class="onload-animation"
+						style={`animation-delay: calc(var(--content-delay) + ${index * 50}ms);`}
+					/>
+				))}
+			</div>
+		) : (
+			<div class="card-base z-10 px-9 py-6">
+				<p class="text-75">暂无友链，欢迎添加！</p>
+			</div>
+		)}
+	</div>
+</MainGridLayout>
+
