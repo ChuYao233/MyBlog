@@ -31,8 +31,20 @@ const linksCollection = defineCollection({
 		avatar: z.string().optional().default(""),
 	}),
 });
+const sponsorsCollection = defineCollection({
+	type: "data",
+	schema: z.object({
+		name: z.string(),
+		amount: z.number().optional(),
+		date: z.string().optional().default(""),
+		message: z.string().optional().default(""),
+		avatar: z.string().optional().default(""),
+		url: z.union([z.string().url(), z.literal("")]).optional(),
+	}),
+});
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
 	links: linksCollection,
+	sponsors: sponsorsCollection,
 };

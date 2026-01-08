@@ -37,6 +37,10 @@ export const siteConfig: SiteConfig = {
 		//   sizes: '32x32',              // (Optional) Size of the favicon, set only if you have favicons of different sizes
 		// }
 	],
+	repository: {
+		url: "https://github.com/ChuYao233/MyBlog", // GitHub 仓库 URL
+		branch: "main", // 分支名称，默认为 "main"
+	},
 };
 
 export const navBarConfig: NavBarConfig = {

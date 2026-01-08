@@ -1,9 +1,93 @@
-# About
-This is the demo site for [Fuwari](https://github.com/saicaca/fuwari).
+# 关于我
 
-::github{repo="saicaca/fuwari"}
+你好，我是 ChuYao，欢迎来到我的博客！
 
-> ### Sources of images used in this site
-> - [Unsplash](https://unsplash.com/)
-> - [星と少女](https://www.pixiv.net/artworks/108916539) by [Stella](https://www.pixiv.net/users/93273965)
-> - [Rabbit - v1.4 Showcase](https://civitai.com/posts/586908) by [Rabbit_YourMajesty](https://civitai.com/user/Rabbit_YourMajesty)
+## 自我介绍
+
+这里是我的个人博客，主要记录一些技术学习、生活感悟和日常琐碎。如果你对我的内容感兴趣，欢迎与我交流。
+
+## 联系方式
+
+- **邮箱**: [ChuYao@yaoxc.com](mailto:ChuYao@yaoxc.com)
+
+如果你有任何问题、建议、商务合作或想要交流的内容，随时可以通过邮箱联系我。
+
+## 关于这个博客
+
+这个博客使用 [Astro](https://astro.build/) 构建，记录我的学习历程和思考。内容主要涵盖：
+
+- 技术学习笔记
+- 开发经验分享
+- 生活感悟
+- 其他感兴趣的话题
+
+感谢你的访问，希望你能在这里找到一些有用的内容！
+
+---
+
+## 隐私政策
+
+### 网站性质
+
+本网站是一个静态网站，这意味着：
+
+- 我们不会在服务器端存储您的个人信息
+- 网站内容是预先生成的，不会动态处理用户数据
+- 我们不会主动收集或存储您的个人信息
+
+### 第三方服务
+
+尽管本网站本身是静态的，但我们使用了以下第三方服务，这些服务可能会收集和处理您的信息：
+
+#### CDN 和托管服务
+
+根据您访问的节点不同，以下服务提供商可能会收集您的信息：
+
+- **Cloudflare**
+  - 可能收集的信息：IP 地址、访问时间、请求的页面、浏览器信息
+  - 用途：提供 CDN 服务、安全防护、性能优化
+  - 隐私政策：[Cloudflare 隐私政策](https://www.cloudflare.com/zh-cn/privacypolicy/)
+
+- **腾讯云 EdgeOne**
+  - 可能收集的信息：IP 地址、访问时间、请求的页面、浏览器信息
+  - 用途：提供 CDN 服务、安全防护、性能优化
+  - 隐私政策：[腾讯云隐私政策](https://cloud.tencent.com/document/product/301/11470)
+
+- **阿里云 ESA**
+  - 可能收集的信息：IP 地址、访问时间、请求的页面、浏览器信息
+  - 用途：提供 CDN 服务、安全防护、性能优化
+  - 隐私政策：[阿里云隐私政策](https://www.aliyun.com/acts/privacy-policy)
+
+#### 分析和统计服务
+
+- **Umami 分析**
+  - 可能收集的信息：页面浏览量、访问来源、设备类型（匿名化处理）
+  - 用途：网站流量统计和分析
+  - 特点：注重隐私保护，不使用 Cookie，数据匿名化处理
+  - 实时查看：您可以在网站导航栏中实时查看站点流量统计
+
+### Cookie 和本地存储
+
+我们的网站可能使用以下技术：
+
+- **Cookie**：用于网站功能和第三方服务
+- **本地存储**：用于保存用户偏好设置（如主题选择）
+- **会话存储**：用于临时存储页面状态
+
+---
+
+## 开源协议
+
+### 博客内容许可
+
+本博客的所有原创内容采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 进行许可。
+
+- **分享**：可以复制、发行本作品
+- **演绎**：可以修改、转换或以本作品为基础进行创作
+- **署名**：必须给出适当的署名
+- **非商业性使用**：不得用于商业目的
+- **相同方式共享**：基于本作品创作的内容需采用相同许可协议
+
+### 代码许可
+
+本博客的源代码采用 [MIT License](https://opensource.org/licenses/MIT) 进行许可，允许商业使用、修改和分发。

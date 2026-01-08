@@ -1,0 +1,124 @@
+---
+import LazyImage from "./misc/LazyImage.astro";
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	name: string;
+	amount?: number;
+	date?: string;
+	message?: string;
+	avatar?: string;
+	url?: string;
+	class?: string;
+	style?: string;
+}
+
+const { name, amount, date, message, avatar, url, class: className, style } = Astro.props;
+
+const formatDate = (dateStr?: string) => {
+	if (!dateStr) return "";
+	try {
+		const date = new Date(dateStr);
+		return date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+	} catch {
+		return dateStr;
+	}
+};
+---
+
+{url ? (
+	<a
+		href={url}
+		target="_blank"
+		rel="noopener noreferrer"
+		class:list={[
+			"sponsor-card group card-base flex flex-col gap-3 p-6 rounded-[var(--radius-large)] transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]",
+			className,
+		]}
+		style={style}
+	>
+		<div class="flex items-start gap-4">
+			{avatar && (
+				<LazyImage
+					src={avatar}
+					alt={`${name} 的头像`}
+					class="w-14 h-14 rounded-full flex-shrink-0"
+					loading="lazy"
+				/>
+			)}
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-2 mb-1">
+					<h3 class="text-lg font-bold text-90 truncate">{name}</h3>
+					{amount && (
+						<span class="text-sm font-semibold text-[var(--primary)] flex items-center gap-1">
+							<Icon name="fa6-solid:heart" class="w-4 h-4" />
+							¥{amount}
+						</span>
+					)}
+				</div>
+				{date && (
+					<p class="text-60 text-xs mb-2 flex items-center gap-1">
+						<Icon name="fa6-solid:calendar-days" class="w-3 h-3" />
+						{formatDate(date)}
+					</p>
+				)}
+				{message && (
+					<p class="text-75 text-sm line-clamp-2 mt-1">{message}</p>
+				)}
+			</div>
+			<svg
+				class="w-5 h-5 text-[var(--primary)] flex-shrink-0 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 opacity-0 group-hover:opacity-100"
+				fill="none"
+				stroke="currentColor"
+				viewBox="0 0 24 24"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+				/>
+			</svg>
+		</div>
+	</a>
+) : (
+	<div
+		class:list={[
+			"sponsor-card card-base flex flex-col gap-3 p-6 rounded-[var(--radius-large)]",
+			className,
+		]}
+		style={style}
+	>
+		<div class="flex items-start gap-4">
+			{avatar && (
+				<LazyImage
+					src={avatar}
+					alt={`${name} 的头像`}
+					class="w-14 h-14 rounded-full flex-shrink-0"
+					loading="lazy"
+				/>
+			)}
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-2 mb-1">
+					<h3 class="text-lg font-bold text-90 truncate">{name}</h3>
+					{amount && (
+						<span class="text-sm font-semibold text-[var(--primary)] flex items-center gap-1">
+							<Icon name="fa6-solid:heart" class="w-4 h-4" />
+							¥{amount}
+						</span>
+					)}
+				</div>
+				{date && (
+					<p class="text-60 text-xs mb-2 flex items-center gap-1">
+						<Icon name="fa6-solid:calendar-days" class="w-3 h-3" />
+						{formatDate(date)}
+					</p>
+				)}
+				{message && (
+					<p class="text-75 text-sm line-clamp-2 mt-1">{message}</p>
+				)}
+			</div>
+		</div>
+	</div>
+)}
+

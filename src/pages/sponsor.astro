@@ -1,24 +1,130 @@
 ---
-
-import { getEntry, render } from "astro:content";
-import Markdown from "@components/misc/Markdown.astro";
+import { getCollection } from "astro:content";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { Icon } from "astro-icon/components";
+import SponsorCard from "@components/SponsorCard.astro";
+import wechatpayImage from "../assets/images/wechatpay.svg?url";
+import alipayImage from "../assets/images/alipay.svg?url";
 
-const sponsorPost = await getEntry("spec", "sponsor");
+const allSponsors = await getCollection("sponsors");
 
-if (!sponsorPost) {
-	throw new Error("Sponsor page content not found");
-}
-
-const { Content } = await render(sponsorPost);
+// 按日期排序（最新的在前），如果没有日期则放在最后
+const sortedSponsors = allSponsors.sort((a, b) => {
+	const dateA = a.data.date || "";
+	const dateB = b.data.date || "";
+	if (!dateA && !dateB) return 0;
+	if (!dateA) return 1;
+	if (!dateB) return -1;
+	return dateB.localeCompare(dateA);
+});
 ---
-<MainGridLayout title="赞助" description="赞助">
-    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
-        <div class="card-base z-10 px-9 py-6 relative w-full ">
-            <Markdown class="mt-2">
-                <Content />
-            </Markdown>
-        </div>
-    </div>
+<MainGridLayout title="赞赏" description="赞赏">
+	<div class="w-full">
+		<div class="card-base z-10 px-9 py-6 mb-6">
+			<div class="flex items-start gap-4">
+				<div class="flex-1">
+					<h1 class="text-3xl font-bold text-90 mb-2 flex items-center gap-2">
+						<Icon name="fa6-solid:heart" class="w-8 h-8 text-[var(--primary)]" />
+						赞赏
+					</h1>
+				</div>
+			</div>
+		</div>
+
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<!-- 微信收款码 -->
+			<div class="card-base p-6 onload-animation">
+				<div class="flex flex-col items-center">
+					<div class="flex items-center gap-3 mb-4 w-full justify-center">
+						<Icon name="fa6-brands:weixin" class="w-8 h-8 text-[#07c160]" />
+						<h2 class="text-2xl font-bold text-90">微信支付</h2>
+					</div>
+					<div class="w-full max-w-xs mb-4 rounded-lg overflow-hidden bg-white p-4 shadow-inner">
+						<img
+							src={wechatpayImage}
+							alt="微信收款码"
+							class="w-full h-auto"
+							loading="lazy"
+						/>
+					</div>
+					<p class="text-75 text-sm text-center">
+						用微信扫一扫就可以打赏啦~
+					</p>
+				</div>
+			</div>
+
+			<!-- 支付宝收款码 -->
+			<div class="card-base p-6 onload-animation" style="animation-delay: calc(var(--content-delay) + 50ms);">
+				<div class="flex flex-col items-center">
+					<div class="flex items-center gap-3 mb-4 w-full justify-center">
+						<Icon name="fa6-brands:alipay" class="w-8 h-8 text-[#1677ff]" />
+						<h2 class="text-2xl font-bold text-90">支付宝</h2>
+					</div>
+					<div class="w-full max-w-xs mb-4 rounded-lg overflow-hidden bg-white p-4 shadow-inner">
+						<img
+							src={alipayImage}
+							alt="支付宝收款码"
+							class="w-full h-auto"
+							loading="lazy"
+						/>
+					</div>
+					<p class="text-75 text-sm text-center">
+						用支付宝扫一扫就可以打赏啦~
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- 感谢信息 -->
+		<div class="card-base z-10 px-9 py-6 mt-6">
+			<div class="flex items-start gap-3">
+				<Icon name="fa6-solid:hand-holding-heart" class="w-6 h-6 text-[var(--primary)] flex-shrink-0 mt-1" />
+				<div>
+					<h3 class="text-xl font-bold text-90 mb-2">感谢打赏！</h3>
+					<p class="text-75 leading-relaxed">
+						收到打赏超开心的说！每一份支持都是继续创作的动力呢~
+						无论多少都很感谢，会继续努力产出优质内容的！
+						所有收到的打赏将用于网站运营维护、服务器成本以及持续创作更多优质内容。
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- 赞赏者列表 -->
+		<div class="mt-6">
+			<div class="card-base z-10 px-9 py-6 mb-6">
+				<h2 class="text-2xl font-bold text-90 flex items-center gap-2">
+					<Icon name="fa6-solid:users" class="w-6 h-6 text-[var(--primary)]" />
+					赞赏者名单
+				</h2>
+				<p class="text-75 text-sm mt-2">
+					感谢以下朋友的支持与鼓励！
+				</p>
+			</div>
+			{sortedSponsors.length > 0 ? (
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{sortedSponsors.map((sponsor, index) => (
+						<SponsorCard
+							name={sponsor.data.name}
+							amount={sponsor.data.amount}
+							date={sponsor.data.date}
+							message={sponsor.data.message}
+							avatar={sponsor.data.avatar}
+							url={sponsor.data.url}
+							class="onload-animation"
+							style={`animation-delay: calc(var(--content-delay) + ${index * 50}ms);`}
+						/>
+					))}
+				</div>
+			) : (
+				<div class="card-base z-10 px-9 py-6">
+					<p class="text-75 flex items-center gap-2">
+						<Icon name="fa6-solid:heart" class="w-5 h-5 flex-shrink-0" />
+						暂无赞赏记录，感谢你的支持！
+					</p>
+				</div>
+			)}
+		</div>
+	</div>
 </MainGridLayout>
 

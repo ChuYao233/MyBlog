@@ -1,4 +1,6 @@
 ---
+import LazyImage from "./misc/LazyImage.astro";
+
 interface Props {
 	name: string;
 	url: string;
@@ -11,21 +13,22 @@ interface Props {
 const { name, url, description, avatar, class: className, style } = Astro.props;
 ---
 
+
 <a
 	href={url}
 	target="_blank"
 	rel="noopener noreferrer"
 	class:list={[
-		"card-base flex items-center gap-4 p-6 rounded-[var(--radius-large)] transition hover:scale-[1.02] active:scale-[0.98]",
+		"link-card group card-base flex items-center gap-4 p-6 rounded-[var(--radius-large)] transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]",
 		className,
 	]}
 	style={style}
 >
 	{avatar && (
-		<img
+		<LazyImage
 			src={avatar}
 			alt={`${name} 的头像`}
-			class="w-16 h-16 rounded-full object-cover flex-shrink-0"
+			class="w-16 h-16 rounded-full flex-shrink-0"
 			loading="lazy"
 		/>
 	)}
@@ -36,7 +39,7 @@ const { name, url, description, avatar, class: className, style } = Astro.props;
 		)}
 	</div>
 	<svg
-		class="w-6 h-6 text-[var(--primary)] flex-shrink-0"
+		class="w-6 h-6 text-[var(--primary)] flex-shrink-0 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
 		fill="none"
 		stroke="currentColor"
 		viewBox="0 0 24 24"
@@ -49,4 +52,3 @@ const { name, url, description, avatar, class: className, style } = Astro.props;
 		/>
 	</svg>
 </a>
-

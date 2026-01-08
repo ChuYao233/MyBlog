@@ -13,7 +13,6 @@ name: 友链名称
 url: https://example.com
 description: 友链描述（可选）
 avatar: https://example.com/avatar.jpg（可选）
-email: example@example.com（可选）
 ```
 
 ## 必需字段

@@ -77,6 +77,19 @@ html {
     .btn-card.disabled {
         @apply pointer-events-none text-black/10 dark:text-white/10
     }
+    .link-card {
+        @apply cursor-pointer;
+    }
+    .link-card::before {
+        transition: background-color 0.3s ease, opacity 0.3s ease;
+    }
+    .link-card:hover::before {
+        background-color: color-mix(in oklch, var(--primary) 15%, var(--card-bg));
+        opacity: 1;
+    }
+    .link-card:active::before {
+        background-color: color-mix(in oklch, var(--primary) 25%, var(--card-bg));
+    }
     .btn-plain {
         @apply transition relative flex items-center justify-center bg-none
         text-black/75 hover:text-[var(--primary)] dark:text-white/75 dark:hover:text-[var(--primary)];
@@ -126,6 +139,9 @@ html {
     }
     .text-75 {
         @apply text-black/75 dark:text-white/75
+    }
+    .text-60 {
+        @apply text-black/60 dark:text-white/60
     }
     .text-50 {
         @apply text-black/50 dark:text-white/50

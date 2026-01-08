@@ -1,8 +1,9 @@
 ---
-
 import { getCollection } from "astro:content";
 import LinkCard from "@components/LinkCard.astro";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { Icon } from "astro-icon/components";
+import { siteConfig } from "../config";
 
 const allLinks = await getCollection("links");
 
@@ -10,12 +11,50 @@ const allLinks = await getCollection("links");
 const sortedLinks = allLinks.sort((a, b) => {
 	return a.data.name.localeCompare(b.data.name, "zh-CN");
 });
+
+// 生成仓库友链目录链接
+const getRepositoryLinksUrl = () => {
+	if (!siteConfig.repository) return null;
+	const repoUrl = siteConfig.repository.url;
+	const branch = siteConfig.repository.branch || "main";
+	// 从 GitHub URL 提取用户名和仓库名
+	const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+	if (match) {
+		const [, username, repo] = match;
+		return `https://github.com/${username}/${repo}/tree/${branch}/src/content/links`;
+	}
+	return null;
+};
+
+const repositoryLinksUrl = getRepositoryLinksUrl();
 ---
 <MainGridLayout title="友链" description="友链">
 	<div class="w-full">
 		<div class="card-base z-10 px-9 py-6 mb-6">
-			<h1 class="text-3xl font-bold text-90 mb-2">友链</h1>
-			<p class="text-75">欢迎交换友链！如果你也想添加友链，请联系我。</p>
+			<div class="flex items-start justify-between gap-4">
+				<div class="flex-1">
+					<h1 class="text-3xl font-bold text-90 mb-2 flex items-center gap-2">
+						<Icon name="fa6-solid:link" class="w-8 h-8 text-[var(--primary)]" />
+						友链
+					</h1>
+					<p class="text-75 flex items-center gap-2">
+						<Icon name="fa6-solid:circle-info" class="w-5 h-5 flex-shrink-0" />
+						如果你想交换友链。请前往我的仓库按照格式创建一个YAML文件
+					</p>
+				</div>
+				{repositoryLinksUrl && (
+					<a
+						href={repositoryLinksUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn-regular flex items-center gap-2 px-4 py-2 rounded-lg text-sm whitespace-nowrap flex-shrink-0"
+						title="跳转到仓库友链目录"
+					>
+						<Icon name="fa6-brands:github" class="w-4 h-4" />
+						<span>添加友链</span>
+					</a>
+				)}
+			</div>
 		</div>
 		
 		{sortedLinks.length > 0 ? (
@@ -34,9 +73,11 @@ const sortedLinks = allLinks.sort((a, b) => {
 			</div>
 		) : (
 			<div class="card-base z-10 px-9 py-6">
-				<p class="text-75">暂无友链，欢迎添加！</p>
+				<p class="text-75 flex items-center gap-2">
+					<Icon name="fa6-solid:link-slash" class="w-5 h-5 flex-shrink-0" />
+					暂无友链，欢迎添加！
+				</p>
 			</div>
 		)}
 	</div>
 </MainGridLayout>
-

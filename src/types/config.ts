@@ -36,6 +36,11 @@ export type SiteConfig = {
 	};
 
 	favicon: Favicon[];
+	
+	repository?: {
+		url: string; // GitHub 仓库 URL，例如 "https://github.com/username/repo"
+		branch?: string; // 分支名称，默认为 "main"
+	};
 };
 
 export type Favicon = {

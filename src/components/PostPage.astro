@@ -7,6 +7,7 @@ const { page } = Astro.props;
 
 let delay = 0;
 const interval = 50;
+const slugs = page.data.map((entry: CollectionEntry<"posts">) => entry.slug);
 ---
 <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4 mb-4">
     {page.data.map((entry: CollectionEntry<"posts">) => (
@@ -26,3 +27,53 @@ const interval = 50;
         ></PostCard>
     ))}
 </div>
+
+<script>
+    import { fetchPostStats } from "../utils/post-stats";
+
+    function formatNumber(num) {
+        if (num >= 10000) {
+            const w = num / 10000;
+            return Number.isInteger(w) ? `${w}w` : `${w.toFixed(2)}w`;
+        }
+        if (num >= 1000) {
+            const k = num / 1000;
+            return Number.isInteger(k) ? `${k}k` : `${k.toFixed(2)}k`;
+        }
+        return num.toString();
+    }
+
+    function updateStat(container, stats) {
+        if (!container || !stats) return;
+        const viewsEl = container.querySelector(".post-views");
+        const visitorsEl = container.querySelector(".post-visitors");
+        if (viewsEl) {
+            viewsEl.textContent = formatNumber(stats.views || 0);
+            viewsEl.title = (stats.views || 0).toLocaleString();
+        }
+        if (visitorsEl) {
+            visitorsEl.textContent = formatNumber(stats.uniqueVisitors || 0);
+            visitorsEl.title = (stats.uniqueVisitors || 0).toLocaleString();
+        }
+    }
+
+    (async function () {
+        if (typeof window === "undefined") return;
+        const cards = Array.from(document.querySelectorAll("[data-post-slug]"));
+        const slugs = cards
+            .map((card) => card.getAttribute("data-post-slug") || "")
+            .filter(Boolean);
+        if (!slugs.length) return;
+        try {
+            const statsMap = await fetchPostStats(slugs);
+            document.querySelectorAll("[data-post-slug]").forEach((card) => {
+                const slug = card.getAttribute("data-post-slug");
+                const stats = statsMap?.[slug || ""] || null;
+                const statBox = card.querySelector("[data-post-stats]");
+                updateStat(statBox, stats);
+            });
+        } catch (error) {
+            console.debug("Failed to load post stats:", error);
+        }
+    })();
+</script>

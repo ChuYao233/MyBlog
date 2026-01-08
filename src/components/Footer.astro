@@ -1,9 +1,36 @@
 ---
 
-import { profileConfig } from "../config";
+import { profileConfig, siteConfig } from "../config";
 import { url } from "../utils/url-utils";
+import { getBuildInfo } from "../utils/build-info";
 
 const currentYear = new Date().getFullYear();
+const buildInfo = getBuildInfo();
+
+// 格式化构建时间
+function formatBuildTime(isoString: string): string {
+	try {
+		const date = new Date(isoString);
+		return date.toLocaleString("zh-CN", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			timeZone: "Asia/Shanghai",
+		});
+	} catch {
+		return isoString;
+	}
+}
+
+const formattedBuildTime = formatBuildTime(buildInfo.buildTime);
+const repositoryUrl = siteConfig.repository?.url || "";
+const branch = siteConfig.repository?.branch || "main";
+const commitUrl = buildInfo.commitHash
+	? `${repositoryUrl}/commit/${buildInfo.commitHash}`
+	: repositoryUrl;
 
 // 检测服务商
 function detectServiceProvider(): 'cloudflare' | 'esa' | 'edgeone' | null {
@@ -47,6 +74,32 @@ const serviceProvider = detectServiceProvider();
 <div class="card-base card-shadow py-8 mb-12 flex flex-col items-center justify-center px-6">
     <div class="transition text-50 text-sm text-center">
         &copy; 2022 - <span id="copyright-year">{currentYear}</span> <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://space.bilibili.com/349638942">{profileConfig.name}</a> 版权所有
+        {(buildInfo.commitHash || buildInfo.buildTime) && (
+            <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                {buildInfo.commitHash && (
+                    <>
+                        {repositoryUrl ? (
+                            <a
+                                class="transition link text-[var(--primary)] font-medium"
+                                target="_blank"
+                                href={commitUrl}
+                                title={`Commit: ${buildInfo.commitHash}`}
+                            >
+                                {buildInfo.commitHash}
+                            </a>
+                        ) : (
+                            <span title={`Commit: ${buildInfo.commitHash}`}>{buildInfo.commitHash}</span>
+                        )}
+                    </>
+                )}
+                {buildInfo.commitHash && buildInfo.buildTime && " · "}
+                {buildInfo.buildTime && (
+                    <span title={`构建时间: ${buildInfo.buildTime}`}>
+                        {formattedBuildTime}
+                    </span>
+                )}
+            </span>
+        )}
         <br>
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss.xml')}>RSS</a>  /
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>网页地图</a>  /
