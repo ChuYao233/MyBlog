@@ -126,25 +126,22 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
         <span id="service-provider-container">
             {serviceProvider === 'cloudflare' && (
                 <>
-                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.cloudflare.com">
-                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="inline-block h-4 align-middle" />
-                        Cloudflare
+                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
+                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="h-4" />
                     </a>
                 </>
             )}
             {serviceProvider === 'esa' && (
                 <>
-                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.aliyun.com/product/esa">
-                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="inline-block h-4 align-middle" />
-                        阿里云ESA
+                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.aliyun.com/product/esa">
+                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="h-4" />
                     </a>
                 </>
             )}
             {serviceProvider === 'edgeone' && (
                 <>
-                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://cloud.tencent.com/product/teo">
-                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="inline-block h-4 align-middle" />
-                        腾讯EdgeOne
+                    & <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://cloud.tencent.com/product/teo">
+                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="h-4" />
                     </a>
                 </>
             )}
@@ -165,19 +162,16 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
         // 优先使用环境变量（如果已设置）
         if (envProvider === 'cloudflare' || envProvider === 'esa' || envProvider === 'edgeone') {
             if (envProvider === 'cloudflare') {
-                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.cloudflare.com">
-                    <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="inline-block h-4 align-middle" />
-                    Cloudflare
+                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
+                    <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="h-4" />
                 </a>`;
             } else if (envProvider === 'esa') {
-                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.aliyun.com/product/esa">
-                    <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="inline-block h-4 align-middle" />
-                    阿里云ESA
+                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.aliyun.com/product/esa">
+                    <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="h-4" />
                 </a>`;
             } else if (envProvider === 'edgeone') {
-                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://cloud.tencent.com/product/teo">
-                    <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="inline-block h-4 align-middle" />
-                    腾讯EdgeOne
+                container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://cloud.tencent.com/product/teo">
+                    <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="h-4" />
                 </a>`;
             }
             return;
@@ -190,19 +184,16 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
                 const data = await response.json();
                 
                 if (data.provider === 'cloudflare') {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.cloudflare.com">
-                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="inline-block h-4 align-middle" />
-                        Cloudflare
+                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
+                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="h-4" />
                     </a>`;
                 } else if (data.provider === 'esa') {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.aliyun.com/product/esa">
-                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="inline-block h-4 align-middle" />
-                        阿里云ESA
+                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.aliyun.com/product/esa">
+                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="h-4" />
                     </a>`;
                 } else if (data.provider === 'edgeone') {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://cloud.tencent.com/product/teo">
-                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="inline-block h-4 align-middle" />
-                        腾讯EdgeOne
+                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://cloud.tencent.com/product/teo">
+                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="h-4" />
                     </a>`;
                 }
             }
@@ -215,9 +206,8 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
                 
                 // 检测 Cloudflare
                 if (headers.get('cf-ray') || headers.get('cf-connecting-ip')) {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.cloudflare.com">
-                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="inline-block h-4 align-middle" />
-                        Cloudflare
+                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
+                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="h-4" />
                     </a>`;
                     return;
                 }
@@ -227,9 +217,8 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
                 const server = headers.get('server') || '';
                 if (via.toLowerCase().includes('esa') || server.toLowerCase().includes('esa') || 
                     headers.get('x-ali-esa-version') || headers.get('x-ali-esa-id')) {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://www.aliyun.com/product/esa">
-                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="inline-block h-4 align-middle" />
-                        阿里云ESA
+                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.aliyun.com/product/esa">
+                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="h-4" />
                     </a>`;
                     return;
                 }
@@ -238,9 +227,8 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
                 if (via.toLowerCase().includes('edgeone') || server.toLowerCase().includes('edgeone') ||
                     headers.get('x-edgeone-version') || headers.get('x-edgeone-id') ||
                     headers.get('x-edgeone-request-id')) {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1" target="_blank" href="https://cloud.tencent.com/product/teo">
-                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="inline-block h-4 align-middle" />
-                        腾讯EdgeOne
+                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://cloud.tencent.com/product/teo">
+                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="h-4" />
                     </a>`;
                     return;
                 }
