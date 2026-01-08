@@ -1,0 +1,11 @@
+{
+	// ESA 构建配置
+	// Assets 目录：Astro 构建输出目录
+	"assets": {
+		"directory": "./dist"
+	},
+	// Function JS 文件：静态站点不需要 serverless functions
+	// 设置为空字符串表示不使用 serverless functions
+	"functionJsFile": ""
+}
+
