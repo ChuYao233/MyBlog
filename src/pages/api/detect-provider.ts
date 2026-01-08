@@ -1,5 +1,8 @@
 import type { APIRoute } from "astro";
 
+// 必须运行时获取请求头，禁止预渲染
+export const prerender = false;
+
 export const GET: APIRoute = ({ request }) => {
     const headers = request.headers;
     
