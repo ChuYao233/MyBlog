@@ -7,6 +7,7 @@
     "start": "astro dev",
     "check": "astro check",
     "build": "astro build && pagefind --site dist",
+    "postbuild": "echo _worker.js > dist/.assetsignore",
     "preview": "astro preview",
     "astro": "astro",
     "type-check": "tsc --noEmit --isolatedDeclarations",
