@@ -1,7 +1,7 @@
-name: 示例赞赏者
+name: "示例赞赏者"
 amount: 10
 date: "2024-01-01"
-message: 感谢你的优质内容！
-avatar: http://localhost:4321/_image/?href=%2F%40fs%2FE%3A%2FMyBlog%2Fsrc%2Fassets%2Fimages%2Favatar.png%3ForigWidth%3D460%26origHeight%3D460%26origFormat%3Dpng&w=460&h=460&f=webp
-url: https://example.com
+message: "感谢你的优质内容！"
+avatar: "http://localhost:4321/_image/?href=%2F%40fs%2FE%3A%2FMyBlog%2Fsrc%2Fassets%2Fimages%2Favatar.png%3ForigWidth%3D460%26origHeight%3D460%26origFormat%3Dpng&w=460&h=460&f=webp"
+url: "https://example.com"
 
