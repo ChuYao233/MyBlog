@@ -1,47 +1,14 @@
-import type { APIRoute } from "astro";
-
-// 必须运行时获取请求头，禁止预渲染
-export const prerender = false;
-
-export const GET: APIRoute = ({ request }) => {
-    const headers = request.headers;
-    
-    // 检测 Cloudflare
-    if (headers.get('cf-ray') || headers.get('cf-connecting-ip')) {
-        return new Response(JSON.stringify({ provider: 'cloudflare' }), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    }
-    
-    // 检测阿里云ESA
-    const via = headers.get('via') || '';
-    const server = headers.get('server') || '';
-    if (via.toLowerCase().includes('esa') || server.toLowerCase().includes('esa') || 
-        headers.get('x-ali-esa-version') || headers.get('x-ali-esa-id')) {
-        return new Response(JSON.stringify({ provider: 'esa' }), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    }
-    
-    // 检测腾讯EdgeOne
-    if (via.toLowerCase().includes('edgeone') || server.toLowerCase().includes('edgeone') ||
-        headers.get('x-edgeone-version') || headers.get('x-edgeone-id') ||
-        headers.get('x-edgeone-request-id')) {
-        return new Response(JSON.stringify({ provider: 'edgeone' }), {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-    }
-    
-    return new Response(JSON.stringify({ provider: null }), {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
-};
-
+// 在 ESA / EdgeOne / Cloudflare Pages 等纯静态托管下是没有 Astro 运行时 API 的，
+// 这个文件在静态模式下也不会被用到。保留一个简单的占位，避免误用。
+export function GET() {
+	return new Response(
+		JSON.stringify({
+			provider: import.meta.env.PUBLIC_SERVICE_PROVIDER ?? null,
+		}),
+		{
+			headers: {
+				"Content-Type": "application/json",
+			},
+		},
+	);
+}

@@ -32,49 +32,12 @@ const commitUrl = buildInfo.commitHash
 	? `${repositoryUrl}/commit/${buildInfo.commitHash}`
 	: repositoryUrl;
 
-// 检测服务商
-function detectServiceProvider(): 'cloudflare' | 'esa' | 'edgeone' | null {
-    // 优先从环境变量获取（适用于静态站点构建时指定）
-    const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
-    if (envProvider === 'cloudflare' || envProvider === 'esa' || envProvider === 'edgeone') {
-        return envProvider;
-    }
-    
-    try {
-        // 在SSR模式下，Astro.request 可用
-        if (typeof Astro !== 'undefined' && Astro.request) {
-            const headers = Astro.request.headers;
-            
-            // 检测 Cloudflare
-            if (headers.get('cf-ray') || headers.get('cf-connecting-ip')) {
-                return 'cloudflare';
-            }
-            
-            // 检测阿里云ESA
-            const via = headers.get('via') || '';
-            const server = headers.get('server') || '';
-            if (via.toLowerCase().includes('esa') || server.toLowerCase().includes('esa') || 
-                headers.get('x-ali-esa-version') || headers.get('x-ali-esa-id')) {
-                return 'esa';
-            }
-            
-            // 检测腾讯EdgeOne
-            if (via.toLowerCase().includes('edgeone') || server.toLowerCase().includes('edgeone') ||
-                headers.get('x-edgeone-version') || headers.get('x-edgeone-id') ||
-                headers.get('x-edgeone-request-id')) {
-                return 'edgeone';
-            }
-        }
-    } catch (e) {
-        // 在SSG模式下，Astro.request 可能不可用
-        // 这种情况下，将在客户端通过JavaScript检测
-    }
-    
-    return null;
-}
-
-const serviceProvider = detectServiceProvider();
+// 服务商：在纯静态 Pages 托管下，不再动态检测，只通过构建环境变量指定
 const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
+const serviceProvider =
+	envProvider === "cloudflare" || envProvider === "esa" || envProvider === "edgeone"
+		? envProvider
+		: null;
 ---
 
 <div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
@@ -151,7 +114,7 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
 </div>
 
 <script define:vars={{ envProvider }}>
-    // 客户端检测服务商（用于SSG模式或服务端检测失败时）
+    // 客户端检测服务商：在纯静态部署下，只信任构建时注入的 envProvider
     (async function() {
         const container = document.getElementById('service-provider-container');
         if (!container) return;
@@ -159,7 +122,7 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
         // 如果服务端已经检测到了，就不需要客户端检测
         if (container.innerHTML.trim() !== '') return;
         
-        // 优先使用环境变量（如果已设置）
+        // 只使用环境变量（构建时/部署时注入）
         if (envProvider === 'cloudflare' || envProvider === 'esa' || envProvider === 'edgeone') {
             if (envProvider === 'cloudflare') {
                 container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
@@ -176,66 +139,6 @@ const envProvider = import.meta.env.PUBLIC_SERVICE_PROVIDER;
             }
             return;
         }
-        
-        // 尝试通过 API 检测
-        try {
-            const response = await fetch('/api/detect-provider');
-            if (response.ok) {
-                const data = await response.json();
-                
-                if (data.provider === 'cloudflare') {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
-                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="h-4" />
-                    </a>`;
-                } else if (data.provider === 'esa') {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.aliyun.com/product/esa">
-                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="h-4" />
-                    </a>`;
-                } else if (data.provider === 'edgeone') {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://cloud.tencent.com/product/teo">
-                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="h-4" />
-                    </a>`;
-                }
-            }
-        } catch (error) {
-            // API 不可用（静态站点模式），尝试通过检查响应头检测
-            try {
-                // 通过 fetch 当前页面来检查响应头
-                const pageResponse = await fetch(window.location.href, { method: 'HEAD' });
-                const headers = pageResponse.headers;
-                
-                // 检测 Cloudflare
-                if (headers.get('cf-ray') || headers.get('cf-connecting-ip')) {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.cloudflare.com">
-                        <img src="/favicon/foot-cloudflare.png" alt="Cloudflare" class="h-4" />
-                    </a>`;
-                    return;
-                }
-                
-                // 检测阿里云ESA
-                const via = headers.get('via') || '';
-                const server = headers.get('server') || '';
-                if (via.toLowerCase().includes('esa') || server.toLowerCase().includes('esa') || 
-                    headers.get('x-ali-esa-version') || headers.get('x-ali-esa-id')) {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://www.aliyun.com/product/esa">
-                        <img src="/favicon/foot-esa.png" alt="阿里云ESA" class="h-4" />
-                    </a>`;
-                    return;
-                }
-                
-                // 检测腾讯EdgeOne
-                if (via.toLowerCase().includes('edgeone') || server.toLowerCase().includes('edgeone') ||
-                    headers.get('x-edgeone-version') || headers.get('x-edgeone-id') ||
-                    headers.get('x-edgeone-request-id')) {
-                    container.innerHTML = `& <a class="transition link text-[var(--primary)] font-medium inline-flex items-center gap-1 align-middle" target="_blank" href="https://cloud.tencent.com/product/teo">
-                        <img src="/favicon/foot-edgeone.png" alt="腾讯EdgeOne" class="h-4" />
-                    </a>`;
-                    return;
-                }
-            } catch (headerError) {
-                // 静默失败，不显示服务商logo
-                console.debug('Failed to detect service provider:', headerError);
-            }
-        }
+        // 不再通过 API / 响应头猜测，避免在纯静态 Pages 环境下各种不兼容
     })();
 </script>

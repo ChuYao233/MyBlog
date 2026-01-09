@@ -30,10 +30,8 @@ export default defineConfig({
 	site: "https://fuwari.vercel.app/",
 	base: "/",
 	trailingSlash: "always",
-	// 使用 Cloudflare 适配器，支持 API 路由等服务端功能
-	adapter: cloudflare(),
-	// Astro 5 仅支持 "static" 或 "server"，这里使用服务端模式以支持 API 路由
-	output: "server",
+	// 部署在 ESA 等纯静态环境，所以使用静态输出
+	output: "static",
 	integrations: [
 		tailwind({
 			nesting: true,
