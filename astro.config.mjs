@@ -26,11 +26,14 @@ import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 
 // https://astro.build/config
-	export default defineConfig({
+export default defineConfig({
 	site: "https://fuwari.vercel.app/",
 	base: "/",
 	trailingSlash: "always",
-	output: "static",
+	// 使用 Cloudflare 适配器，支持 API 路由等服务端功能
+	adapter: cloudflare(),
+	// 混合输出：普通页面走静态构建，API 等走服务端
+	output: "hybrid",
 	integrations: [
 		tailwind({
 			nesting: true,
