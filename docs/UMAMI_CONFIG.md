@@ -82,13 +82,15 @@ pnpm dev
 ## 工作原理
 
 1. **自动跟踪**：Umami 脚本会自动跟踪所有页面访问（包括 SPA 导航）
-2. **数据获取**：后端 API 路由通过 Umami Share URL 获取统计数据（无需认证）
-3. **数据展示**：前端组件从 API 获取数据并显示在页面上
+2. **数据获取**：客户端直接通过 Umami Share URL 获取统计数据（无需认证，无需后端 API）
+3. **数据展示**：前端组件直接调用 Umami API 并显示在页面上
 
-## API 端点
+## 客户端工具函数
 
-- `/api/visitor-stats` - 获取网站总访问量和访客数
-- `/api/post-stats?slugs=slug1,slug2` - 批量获取多篇文章的统计数据
+- `src/utils/visitor-stats.ts` - 获取网站总访问量和访客数
+- `src/utils/post-stats.ts` - 批量获取多篇文章的统计数据
+
+这些工具函数直接在客户端调用 Umami Share URL，无需通过 Astro API 路由中转。
 
 ## 注意事项
 

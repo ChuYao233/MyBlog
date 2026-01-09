@@ -1,13 +1,13 @@
 // 访客统计工具（客户端）
-// 直接使用 Umami Share URL，不通过 API 端点
-import { getWebsiteStats } from './umami-api';
+// 直接调用 Umami API 获取统计数据
+import { getWebsiteStats } from "./umami-api";
 
 export interface VisitorStats {
 	uniqueVisitors: number;
 	totalViews: number;
 }
 
-// 直接从 Umami 获取统计数据
+// 从 Umami API 获取统计数据
 async function fetchStatsFromUmami(): Promise<VisitorStats | null> {
 	try {
 		const umamiStats = await getWebsiteStats();
@@ -30,10 +30,10 @@ export async function initVisitorStats(): Promise<VisitorStats> {
 		return { uniqueVisitors: 0, totalViews: 0 };
 	}
 	
-	// 直接从 Umami 获取最新统计数据
-	const umamiStats = await fetchStatsFromUmami();
-	if (umamiStats) {
-		return umamiStats;
+	// 直接从 Umami API 获取最新统计数据
+	const stats = await fetchStatsFromUmami();
+	if (stats) {
+		return stats;
 	}
 	
 	// 如果失败，返回 0
@@ -46,10 +46,10 @@ export async function getVisitorStats(): Promise<VisitorStats> {
 		return { uniqueVisitors: 0, totalViews: 0 };
 	}
 	
-	// 直接从 Umami 获取
-	const umamiStats = await fetchStatsFromUmami();
-	if (umamiStats) {
-		return umamiStats;
+	// 直接从 Umami API 获取
+	const stats = await fetchStatsFromUmami();
+	if (stats) {
+		return stats;
 	}
 	
 	// 如果失败，返回 0

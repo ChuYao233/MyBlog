@@ -2,12 +2,45 @@
 import type { CollectionEntry } from "astro:content";
 import { getPostUrlBySlug } from "@utils/url-utils";
 import PostCard from "./PostCard.astro";
+import { getMultiplePageStats } from "../utils/umami-api";
 
 const { page } = Astro.props;
 
 let delay = 0;
 const interval = 50;
 const slugs = page.data.map((entry: CollectionEntry<"posts">) => entry.slug);
+
+// 在服务器端获取文章统计数据（不受 CORS 限制）
+let postStatsMap: Record<string, { views: number; uniqueVisitors: number }> = {};
+try {
+	const uniqueSlugs = Array.from(new Set(slugs)).filter(Boolean);
+	const pagePaths = uniqueSlugs.map(getPostUrlBySlug);
+	const umamiStats = await getMultiplePageStats(pagePaths);
+	
+	// 将 Umami 数据映射回 slug
+	for (const slug of uniqueSlugs) {
+		const pagePath = getPostUrlBySlug(slug);
+		const umamiData = umamiStats[pagePath];
+		
+		if (umamiData) {
+			postStatsMap[slug] = {
+				views: umamiData.pageviews.value || 0,
+				uniqueVisitors: umamiData.uniques.value || 0,
+			};
+		} else {
+			postStatsMap[slug] = {
+				views: 0,
+				uniqueVisitors: 0,
+			};
+		}
+	}
+} catch (error) {
+	console.debug("Failed to fetch post stats on server:", error);
+	// 如果失败，为所有文章设置默认值
+	for (const slug of slugs) {
+		postStatsMap[slug] = { views: 0, uniqueVisitors: 0 };
+	}
+}
 ---
 <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4 mb-4">
     {page.data.map((entry: CollectionEntry<"posts">) => (
@@ -28,9 +61,10 @@ const slugs = page.data.map((entry: CollectionEntry<"posts">) => entry.slug);
     ))}
 </div>
 
-<script>
-    import { fetchPostStats } from "../utils/post-stats";
+<script type="application/json" id="post-stats-data" set:html={JSON.stringify(postStatsMap)}>
+</script>
 
+<script>
     function formatNumber(num) {
         if (num >= 10000) {
             const w = num / 10000;
@@ -57,23 +91,47 @@ const slugs = page.data.map((entry: CollectionEntry<"posts">) => entry.slug);
         }
     }
 
-    (async function () {
+    // 从服务器端注入的数据中读取统计数据
+    (function () {
         if (typeof window === "undefined") return;
-        const cards = Array.from(document.querySelectorAll("[data-post-slug]"));
-        const slugs = cards
-            .map((card) => card.getAttribute("data-post-slug") || "")
-            .filter(Boolean);
-        if (!slugs.length) return;
-        try {
-            const statsMap = await fetchPostStats(slugs);
-            document.querySelectorAll("[data-post-slug]").forEach((card) => {
-                const slug = card.getAttribute("data-post-slug");
-                const stats = statsMap?.[slug || ""] || null;
-                const statBox = card.querySelector("[data-post-stats]");
-                updateStat(statBox, stats);
-            });
-        } catch (error) {
-            console.debug("Failed to load post stats:", error);
+        
+        function initPostStats() {
+            try {
+                // 从 script 标签中读取服务器端获取的数据
+                const dataScript = document.getElementById('post-stats-data');
+                let statsMap: Record<string, { views: number; uniqueVisitors: number }> = {};
+                
+                if (dataScript && dataScript.textContent) {
+                    try {
+                        const rawData = dataScript.textContent.trim();
+                        statsMap = JSON.parse(rawData);
+                    } catch (e) {
+                        console.error('Failed to parse post stats data:', e, 'Raw data:', dataScript.textContent);
+                    }
+                } else {
+                    console.warn('未找到 post-stats-data 脚本标签');
+                }
+                
+                // 更新所有文章卡片的统计
+                const cards = document.querySelectorAll("[data-post-slug]");
+                
+                cards.forEach((card) => {
+                    const slug = card.getAttribute("data-post-slug");
+                    const stats = statsMap?.[slug || ""] || null;
+                    const statBox = card.querySelector("[data-post-stats]");
+                    updateStat(statBox, stats);
+                });
+            } catch (error) {
+                console.error("Failed to load post stats:", error);
+            }
+        }
+        
+        // 确保 DOM 加载完成后再执行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPostStats);
+        } else {
+            // DOM 已经加载完成，立即执行
+            initPostStats();
         }
     })();
 </script>

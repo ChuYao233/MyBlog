@@ -1,10 +1,7 @@
-// Umami Share URL 工具函数（使用游客链接方式，适用于自托管 Umami）
-// 硬编码 Share URL
-const getShareUrl = (): string => {
-	return 'https://umami.2o.nz/share/kek80GxcLVqvtJRg';
-};
+// Umami API 工具函数
+// 使用 /api/share/${shareId} 获取 websiteId 和 token
+// 然后使用 /api/websites/${websiteId}/stats 获取统计数据
 
-// 从Share URL中提取基础URL和Share ID
 const getUmamiBaseUrl = (): string => {
 	return 'https://umami.2o.nz';
 };
@@ -13,12 +10,47 @@ const getShareId = (): string => {
 	return 'kek80GxcLVqvtJRg';
 };
 
-// Umami Share URL 返回的数据结构
-interface UmamiShareData {
-	pageviews?: { value: number };
-	uniques?: { value: number };
-	visitors?: { value: number };
-	views?: { value: number };
+interface UmamiShareResponse {
+	websiteId: string;
+	token: string;
+}
+
+interface UmamiStatsResponse {
+	pageviews?: number | { value: number };
+	visitors?: number | { value: number };
+}
+
+// 缓存 share 数据（避免重复请求）
+let shareDataCache: { data: UmamiShareResponse; timestamp: number } | null = null;
+const SHARE_CACHE_TTL = 3600_000; // 1小时
+
+// 获取 Umami Share 数据（websiteId 和 token）
+async function getUmamiShareData(): Promise<UmamiShareResponse> {
+	const now = Date.now();
+	
+	// 检查缓存
+	if (shareDataCache && (now - shareDataCache.timestamp) < SHARE_CACHE_TTL) {
+		return shareDataCache.data;
+	}
+	
+	const baseUrl = getUmamiBaseUrl();
+	const shareId = getShareId();
+	const url = `${baseUrl}/api/share/${shareId}`;
+	
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error(`获取 Umami 分享信息失败: ${response.status}`);
+	}
+	
+	const data = await response.json() as UmamiShareResponse;
+	
+	// 更新缓存
+	shareDataCache = {
+		data,
+		timestamp: now,
+	};
+	
+	return data;
 }
 
 // 获取网站总统计数据
@@ -26,145 +58,52 @@ export async function getWebsiteStats(): Promise<{
 	pageviews: { value: number };
 	uniques: { value: number };
 } | null> {
-	const shareUrl = getShareUrl();
-	if (!shareUrl) {
-		console.warn('Umami Share URL not configured');
-		return null;
-	}
-
 	try {
+		const { websiteId, token } = await getUmamiShareData();
 		const baseUrl = getUmamiBaseUrl();
-		const shareId = getShareId();
+		const currentTimestamp = Date.now();
 		
-		// 尝试多种URL格式（包括API端点）
-		const urlsToTry = [
-			// API端点格式
-			`${baseUrl}/api/share/${shareId}`,
-			`${baseUrl}/api/share/${shareId}/stats`,
-			`${baseUrl}/api/shares/${shareId}`,
-			`${baseUrl}/api/shares/${shareId}/stats`,
-			// Share URL格式
-			`${shareUrl}.json`,
-			`${shareUrl}/stats.json`,
-			`${shareUrl}?format=json`,
-			shareUrl, // 原始URL
-		];
-
-		for (const url of urlsToTry) {
-			try {
-				const response = await fetch(url, {
-					method: 'GET',
-					headers: {
-						'Accept': 'application/json',
-					},
-				});
-
-				if (!response.ok) {
-					console.debug(`Umami URL ${url} returned status ${response.status}`);
-					continue;
-				}
-
-				const contentType = response.headers.get('content-type') || '';
-				
-				// 检查是否是JSON响应
-				if (contentType.includes('application/json')) {
-					const data = await response.json() as UmamiShareData | any;
-					
-					// 验证数据格式 - 支持多种可能的数据结构
-					let pageviews = 0;
-					let uniques = 0;
-					
-					// 尝试不同的数据格式
-					if (data.pageviews?.value !== undefined) {
-						pageviews = data.pageviews.value;
-					} else if (data.views?.value !== undefined) {
-						pageviews = data.views.value;
-					} else if (typeof data.pageviews === 'number') {
-						pageviews = data.pageviews;
-					} else if (typeof data.views === 'number') {
-						pageviews = data.views;
-					}
-					
-					if (data.uniques?.value !== undefined) {
-						uniques = data.uniques.value;
-					} else if (data.visitors?.value !== undefined) {
-						uniques = data.visitors.value;
-					} else if (typeof data.uniques === 'number') {
-						uniques = data.uniques;
-					} else if (typeof data.visitors === 'number') {
-						uniques = data.visitors;
-					}
-					
-					if (pageviews > 0 || uniques > 0 || (data && (data.pageviews || data.views || data.uniques || data.visitors))) {
-						console.debug('Successfully fetched Umami stats from:', url, { pageviews, uniques });
-						return {
-							pageviews: { value: pageviews },
-							uniques: { value: uniques },
-						};
-					}
-				} else if (contentType.includes('text/html')) {
-					// 如果是HTML，尝试解析（某些Umami实例可能返回HTML页面）
-					const text = await response.text();
-					console.debug(`Umami URL ${url} returned HTML, attempting to extract data`);
-					
-					// 尝试从HTML中提取JSON数据
-					// 查找可能的JSON数据模式
-					const jsonPatterns = [
-						/__NEXT_DATA__["\s]*=[\s]*({[\s\S]*?})[\s]*;?/i,
-						/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});/i,
-						/<script[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/i,
-						/({[\s\S]*?"pageviews"[\s\S]*?})/i,
-						/({[\s\S]*?"views"[\s\S]*?})/i,
-					];
-					
-					for (const pattern of jsonPatterns) {
-						const match = text.match(pattern);
-						if (match) {
-							try {
-								const jsonStr = match[1];
-								const data = JSON.parse(jsonStr) as any;
-								
-								// 递归查找统计数据
-								const findStats = (obj: any): { pageviews?: number; uniques?: number } | null => {
-									if (!obj || typeof obj !== 'object') return null;
-									
-									if (obj.pageviews || obj.views || obj.uniques || obj.visitors) {
-										return {
-											pageviews: obj.pageviews?.value ?? obj.pageviews ?? obj.views?.value ?? obj.views,
-											uniques: obj.uniques?.value ?? obj.uniques ?? obj.visitors?.value ?? obj.visitors,
-										};
-									}
-									
-									for (const key in obj) {
-										const result = findStats(obj[key]);
-										if (result) return result;
-									}
-									
-									return null;
-								};
-								
-								const stats = findStats(data);
-								if (stats && (stats.pageviews || stats.uniques)) {
-									console.debug('Successfully extracted stats from HTML:', stats);
-									return {
-										pageviews: { value: stats.pageviews || 0 },
-										uniques: { value: stats.uniques || 0 },
-									};
-								}
-							} catch (e) {
-								console.debug('Failed to parse JSON from HTML pattern:', e);
-							}
-						}
-					}
-				}
-			} catch (fetchError) {
-				console.debug(`Failed to fetch from ${url}:`, fetchError);
-				continue;
+		const params = new URLSearchParams({
+			startAt: '0',
+			endAt: currentTimestamp.toString(),
+			unit: 'hour',
+			timezone: 'Asia/Shanghai',
+			compare: 'false',
+		} as any);
+		
+		const statsUrl = `${baseUrl}/api/websites/${websiteId}/stats?${params.toString()}`;
+		
+		const response = await fetch(statsUrl, {
+			headers: {
+				'x-umami-share-token': token,
+			},
+		});
+		
+		if (!response.ok) {
+			if (response.status === 401) {
+				// Token 过期，清除缓存并重试一次
+				shareDataCache = null;
+				return await getWebsiteStats();
 			}
+			const errorText = await response.text();
+			console.error(`获取统计数据失败: ${response.status}`, errorText, statsUrl);
+			throw new Error(`获取统计数据失败: ${response.status}`);
 		}
-
-		console.error('All Umami URL formats failed. Share URL may not support JSON API. Please check Umami configuration.');
-		return null;
+		
+		const data = await response.json() as UmamiStatsResponse;
+		
+		// 支持两种格式：{ pageviews: 123 } 或 { pageviews: { value: 123 } }
+		const pageviewsValue = typeof data.pageviews === 'object' && data.pageviews !== null 
+			? (data.pageviews as { value: number }).value 
+			: (data.pageviews as number) || 0;
+		const visitorsValue = typeof data.visitors === 'object' && data.visitors !== null 
+			? (data.visitors as { value: number }).value 
+			: (data.visitors as number) || 0;
+		
+		return {
+			pageviews: { value: pageviewsValue },
+			uniques: { value: visitorsValue },
+		};
 	} catch (error) {
 		console.error('Failed to fetch Umami website stats:', error);
 		return null;
@@ -172,93 +111,58 @@ export async function getWebsiteStats(): Promise<{
 }
 
 // 获取特定页面的统计数据
-// 注意：Umami Share URL 可能不支持页面级别的过滤，此函数可能返回网站总统计
 export async function getPageStats(pagePath: string): Promise<{
 	pageviews: { value: number };
 	uniques: { value: number };
 } | null> {
-	const shareUrl = getShareUrl();
-	if (!shareUrl) {
-		console.warn('Umami Share URL not configured');
-		return null;
-	}
-
 	try {
+		const { websiteId, token } = await getUmamiShareData();
 		const baseUrl = getUmamiBaseUrl();
-		const shareId = getShareId();
+		const currentTimestamp = Date.now();
 		
-		// 尝试多种URL格式（包括带页面过滤的API端点）
-		const urlsToTry = [
-			// API端点格式（带页面过滤）
-			`${baseUrl}/api/share/${shareId}?url=${encodeURIComponent(pagePath)}`,
-			`${baseUrl}/api/share/${shareId}/stats?url=${encodeURIComponent(pagePath)}`,
-			`${baseUrl}/api/shares/${shareId}?url=${encodeURIComponent(pagePath)}`,
-			`${baseUrl}/api/shares/${shareId}/stats?url=${encodeURIComponent(pagePath)}`,
-			// Share URL格式（带页面过滤）
-			`${shareUrl}.json?url=${encodeURIComponent(pagePath)}`,
-			`${shareUrl}/stats.json?url=${encodeURIComponent(pagePath)}`,
-			`${shareUrl}?url=${encodeURIComponent(pagePath)}&format=json`,
-		];
-
-		for (const url of urlsToTry) {
-			try {
-				const response = await fetch(url, {
-					method: 'GET',
-					headers: {
-						'Accept': 'application/json',
-					},
-				});
-
-				if (!response.ok) {
-					console.debug(`Umami page URL ${url} returned status ${response.status}`);
-					continue;
-				}
-
-				const contentType = response.headers.get('content-type') || '';
-				
-				if (contentType.includes('application/json')) {
-					const data = await response.json() as UmamiShareData | any;
-					
-					let pageviews = 0;
-					let uniques = 0;
-					
-					if (data.pageviews?.value !== undefined) {
-						pageviews = data.pageviews.value;
-					} else if (data.views?.value !== undefined) {
-						pageviews = data.views.value;
-					} else if (typeof data.pageviews === 'number') {
-						pageviews = data.pageviews;
-					} else if (typeof data.views === 'number') {
-						pageviews = data.views;
-					}
-					
-					if (data.uniques?.value !== undefined) {
-						uniques = data.uniques.value;
-					} else if (data.visitors?.value !== undefined) {
-						uniques = data.visitors.value;
-					} else if (typeof data.uniques === 'number') {
-						uniques = data.uniques;
-					} else if (typeof data.visitors === 'number') {
-						uniques = data.visitors;
-					}
-					
-					if (pageviews > 0 || uniques > 0 || (data && (data.pageviews || data.views || data.uniques || data.visitors))) {
-						console.debug(`Successfully fetched Umami page stats from ${url} for ${pagePath}:`, { pageviews, uniques });
-						return {
-							pageviews: { value: pageviews },
-							uniques: { value: uniques },
-						};
-					}
-				}
-			} catch (fetchError) {
-				console.debug(`Failed to fetch from ${url}:`, fetchError);
-				continue;
+		const params = new URLSearchParams({
+			startAt: '0',
+			endAt: currentTimestamp.toString(),
+			unit: 'hour',
+			timezone: 'Asia/Shanghai',
+			compare: 'false',
+			path: `eq.${pagePath}`,
+		} as any);
+		
+		const statsUrl = `${baseUrl}/api/websites/${websiteId}/stats?${params.toString()}`;
+		
+		const response = await fetch(statsUrl, {
+			headers: {
+				'x-umami-share-token': token,
+			},
+		});
+		
+		if (!response.ok) {
+			if (response.status === 401) {
+				// Token 过期，清除缓存并重试一次
+				shareDataCache = null;
+				return await getPageStats(pagePath);
 			}
+			const errorText = await response.text();
+			console.error(`获取页面统计数据失败: ${response.status}`, errorText, statsUrl);
+			// 如果页面统计失败，回退到网站总统计
+			return await getWebsiteStats();
 		}
-
-		// 如果所有带页面过滤的请求都失败，回退到网站总统计
-		console.warn(`Umami Share URL with page filter failed for ${pagePath}, falling back to website stats`);
-		return await getWebsiteStats();
+		
+		const data = await response.json() as UmamiStatsResponse;
+		
+		// 支持两种格式：{ pageviews: 123 } 或 { pageviews: { value: 123 } }
+		const pageviewsValue = typeof data.pageviews === 'object' && data.pageviews !== null 
+			? (data.pageviews as { value: number }).value 
+			: (data.pageviews as number) || 0;
+		const visitorsValue = typeof data.visitors === 'object' && data.visitors !== null 
+			? (data.visitors as { value: number }).value 
+			: (data.visitors as number) || 0;
+		
+		return {
+			pageviews: { value: pageviewsValue },
+			uniques: { value: visitorsValue },
+		};
 	} catch (error) {
 		console.error(`Failed to fetch Umami page stats for ${pagePath}:`, error);
 		// 出错时返回网站总统计作为回退
@@ -267,7 +171,6 @@ export async function getPageStats(pagePath: string): Promise<{
 }
 
 // 批量获取多个页面的统计数据
-// 注意：如果 Share URL 不支持页面过滤，所有页面将返回相同的网站总统计
 export async function getMultiplePageStats(pagePaths: string[]): Promise<Record<string, {
 	pageviews: { value: number };
 	uniques: { value: number };

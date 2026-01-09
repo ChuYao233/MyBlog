@@ -3,8 +3,23 @@ import { Icon } from "astro-icon/components";
 import { profileConfig } from "../../config";
 import { url } from "../../utils/url-utils";
 import ImageWrapper from "../misc/ImageWrapper.astro";
+import { getWebsiteStats } from "../../utils/umami-api";
 
 const config = profileConfig;
+
+// 在服务器端获取统计数据（不受 CORS 限制）
+let visitorStats = { uniqueVisitors: 0, totalViews: 0 };
+try {
+	const umamiStats = await getWebsiteStats();
+	if (umamiStats) {
+		visitorStats = {
+			uniqueVisitors: umamiStats.uniques.value || 0,
+			totalViews: umamiStats.pageviews.value || 0,
+		};
+	}
+} catch (error) {
+	console.error('[Profile.astro] Failed to fetch visitor stats on server:', error);
+}
 ---
 <div class="card-base p-3">
     <a aria-label="Go to About Page" href={url('/about/')}
@@ -39,20 +54,20 @@ const config = profileConfig;
             <div class="flex items-center gap-1.5">
                 <Icon name="fa6-regular:user" class="text-base"></Icon>
                 <span>访客数:</span>
-                <span id="visitor-stats-visitors" class="font-medium cursor-help">-</span>
+                <span id="visitor-stats-visitors" class="font-medium cursor-help" data-visitors={visitorStats.uniqueVisitors}>-</span>
             </div>
             <div class="flex items-center gap-1.5">
                 <Icon name="fa6-regular:eye" class="text-base"></Icon>
                 <span>访问量:</span>
-                <span id="visitor-stats-views" class="font-medium cursor-help">-</span>
+                <span id="visitor-stats-views" class="font-medium cursor-help" data-views={visitorStats.totalViews}>-</span>
             </div>
         </div>
+        <script type="application/json" id="visitor-stats-data" set:html={JSON.stringify(visitorStats)}>
+        </script>
     </div>
 </div>
 
 <script>
-    import { initVisitorStats } from '../../utils/visitor-stats';
-    
     /**
      * 格式化数字为 k/w 格式
      * @param {number} num - 原始数字
@@ -91,19 +106,42 @@ const config = profileConfig;
         }
     }
     
-    // 初始化访客统计
-    (async function() {
-        try {
-            const stats = await initVisitorStats();
-            
-            // 更新显示
-            const viewsEl = document.getElementById('visitor-stats-views');
-            const visitorsEl = document.getElementById('visitor-stats-visitors');
-            
-            updateStatDisplay(viewsEl, stats.totalViews);
-            updateStatDisplay(visitorsEl, stats.uniqueVisitors);
-        } catch (error) {
-            console.debug('Failed to initialize visitor stats:', error);
+    // 初始化访客统计（从服务器端注入的数据）
+    (function() {
+        function initVisitorStats() {
+            try {
+                // 从 script 标签中读取服务器端获取的数据
+                const dataScript = document.getElementById('visitor-stats-data');
+                let stats = { uniqueVisitors: 0, totalViews: 0 };
+                
+                if (dataScript && dataScript.textContent) {
+                    try {
+                        const rawData = dataScript.textContent.trim();
+                        stats = JSON.parse(rawData);
+                    } catch (e) {
+                        console.error('Failed to parse visitor stats data:', e, 'Raw data:', dataScript.textContent);
+                    }
+                } else {
+                    console.warn('未找到 visitor-stats-data 脚本标签');
+                }
+                
+                // 更新显示
+                const viewsEl = document.getElementById('visitor-stats-views');
+                const visitorsEl = document.getElementById('visitor-stats-visitors');
+                
+                updateStatDisplay(viewsEl, stats.totalViews);
+                updateStatDisplay(visitorsEl, stats.uniqueVisitors);
+            } catch (error) {
+                console.error('Failed to initialize visitor stats:', error);
+            }
+        }
+        
+        // 确保 DOM 加载完成后再执行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initVisitorStats);
+        } else {
+            // DOM 已经加载完成，立即执行
+            initVisitorStats();
         }
     })();
 </script>
