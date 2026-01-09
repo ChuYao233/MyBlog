@@ -1,26 +1,24 @@
 // 访客统计工具（客户端）
+// 直接使用 Umami Share URL，不通过 API 端点
+import { getWebsiteStats } from './umami-api';
+
 export interface VisitorStats {
 	uniqueVisitors: number;
 	totalViews: number;
 }
 
-const API_ENDPOINT = '/api/visitor-stats';
-
-// 从API获取统计数据
-async function fetchStatsFromAPI(): Promise<VisitorStats | null> {
+// 直接从 Umami 获取统计数据
+async function fetchStatsFromUmami(): Promise<VisitorStats | null> {
 	try {
-		const response = await fetch(API_ENDPOINT, {
-			cache: 'no-store',
-		});
-		if (response.ok) {
-			const data = await response.json();
+		const umamiStats = await getWebsiteStats();
+		if (umamiStats) {
 			return {
-				uniqueVisitors: data.uniqueVisitors || 0,
-				totalViews: data.totalViews || 0,
+				uniqueVisitors: umamiStats.uniques.value || 0,
+				totalViews: umamiStats.pageviews.value || 0,
 			};
 		}
 	} catch (error) {
-		console.debug('Failed to fetch stats from API:', error);
+		console.debug('Failed to fetch stats from Umami:', error);
 	}
 	return null;
 }
@@ -32,13 +30,13 @@ export async function initVisitorStats(): Promise<VisitorStats> {
 		return { uniqueVisitors: 0, totalViews: 0 };
 	}
 	
-	// 从 API 获取最新统计数据（API 会从 Umami 获取真实数据）
-	const apiStats = await fetchStatsFromAPI();
-	if (apiStats) {
-		return apiStats;
+	// 直接从 Umami 获取最新统计数据
+	const umamiStats = await fetchStatsFromUmami();
+	if (umamiStats) {
+		return umamiStats;
 	}
 	
-	// 如果 API 失败，返回 0
+	// 如果失败，返回 0
 	return { uniqueVisitors: 0, totalViews: 0 };
 }
 
@@ -48,10 +46,10 @@ export async function getVisitorStats(): Promise<VisitorStats> {
 		return { uniqueVisitors: 0, totalViews: 0 };
 	}
 	
-	// 从API获取
-	const apiStats = await fetchStatsFromAPI();
-	if (apiStats) {
-		return apiStats;
+	// 直接从 Umami 获取
+	const umamiStats = await fetchStatsFromUmami();
+	if (umamiStats) {
+		return umamiStats;
 	}
 	
 	// 如果失败，返回 0
