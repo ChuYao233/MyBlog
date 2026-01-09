@@ -26,14 +26,11 @@ import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 
 // https://astro.build/config
-export default defineConfig({
+	export default defineConfig({
 	site: "https://fuwari.vercel.app/",
 	base: "/",
 	trailingSlash: "always",
-	output: "server",
-	adapter: cloudflare({
-		runtime: "edge",
-	}),
+	output: "static",
 	integrations: [
 		tailwind({
 			nesting: true,

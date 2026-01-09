@@ -15,11 +15,11 @@ import {
 	LIGHT_MODE,
 	PAGE_WIDTH,
 } from "../constants/constants";
-import { defaultFavicons } from "../constants/icon";
 import type { Favicon } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
 import backgroundImage from "../assets/images/background.webp";
+import avatarImage from "../assets/images/avatar.png";
 
 interface Props {
 	title?: string;
@@ -56,7 +56,13 @@ if (title) {
 }
 
 const favicons: Favicon[] =
-	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
+	siteConfig.favicon.length > 0
+		? siteConfig.favicon
+		: [
+				{
+					src: avatarImage.src,
+				},
+		  ];
 
 // const siteLang = siteConfig.lang.replace('_', '-')
 if (!lang) {
