@@ -1,0 +1,68 @@
+---
+interface Props {
+	slug: string;
+	title: string;
+}
+
+const { slug, title } = Astro.props;
+---
+<section
+	id="comments"
+	aria-label={`评论：${title}`}
+	class="card-base w-full rounded-[var(--radius-large)] px-4 md:px-6 py-4 md:py-5 mt-6 space-y-3"
+>
+	<header class="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-2">
+		<div class="min-w-0">
+			<h2 class="text-base md:text-lg font-semibold text-black/80 dark:text-white/85 truncate">
+				评论
+			</h2>
+			<p class="mt-0.5 text-[11px] md:text-xs text-black/45 dark:text-white/45">
+				评论数据基于 GitHub Discussions 存储。
+			</p>
+		</div>
+
+		<div
+			class="shrink-0 rounded-full border border-black/5 dark:border-white/15 px-2.5 py-1
+			       text-[11px] md:text-xs text-black/55 dark:text-white/60 bg-black/2.5 dark:bg-white/3
+			       flex items-center gap-1.5"
+			data-comment-summary
+		>
+			<span class="inline-flex items-center gap-0.5">
+				<span class="w-1 h-1 rounded-full bg-emerald-500/80"></span>
+				<span>评论</span>
+				<span class="tabular-nums" data-comment-count>–</span>
+			</span>
+			<span class="text-black/25 dark:text-white/25">·</span>
+			<span class="inline-flex items-center gap-0.5">
+				<span>回复</span>
+				<span class="tabular-nums" data-reply-count>–</span>
+			</span>
+		</div>
+	</header>
+
+	<div class="pt-1.5">
+		<script
+			src="https://giscus.app/client.js"
+			data-repo="ChuYao233/MyBlog"
+			data-repo-id="R_kgDOQ1-mZA"
+			data-category="Announcements"
+			data-category-id="DIC_kwDOQ1-mZM4C0wL2"
+			data-mapping="pathname"
+			data-strict="0"
+			data-reactions-enabled="0"
+			data-emit-metadata="0"
+			data-input-position="top"
+			data-theme="preferred_color_scheme"
+			data-lang="zh-CN"
+			data-loading="lazy"
+			crossorigin="anonymous"
+			async
+		>
+		</script>
+		<noscript class="text-xs text-black/40 dark:text-white/40 mt-2 block">
+			要查看或参与评论，请启用 JavaScript。
+		</noscript>
+	</div>
+</section>
+
+
