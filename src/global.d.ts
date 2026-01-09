@@ -11,6 +11,9 @@ declare global {
 				}>;
 			}>;
 		};
+		umami?: {
+			track: (url?: string, websiteId?: string) => void;
+		};
 	}
 }
 

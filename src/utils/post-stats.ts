@@ -5,46 +5,6 @@ export interface PostStats {
 }
 
 const API_ENDPOINT = "/api/post-stats";
-const VISITOR_ID_KEY = "visitor_id";
-
-function getVisitorId(): string {
-	if (typeof window === "undefined") return "";
-
-	let visitorId = localStorage.getItem(VISITOR_ID_KEY);
-	if (!visitorId) {
-		visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-		localStorage.setItem(VISITOR_ID_KEY, visitorId);
-	}
-	return visitorId;
-}
-
-// 上报文章访问
-export async function reportPostView(slug: string): Promise<PostStats | null> {
-	if (!slug) return null;
-
-	try {
-		const response = await fetch(API_ENDPOINT, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				slug,
-				visitorId: getVisitorId(),
-				timestamp: Date.now(),
-			}),
-		});
-
-		if (response.ok) {
-			const data = await response.json();
-			return data.stats as PostStats;
-		}
-	} catch (error) {
-		console.debug("Failed to report post view:", error);
-	}
-
-	return null;
-}
 
 // 批量获取文章统计（不增加计数）
 export async function fetchPostStats(slugs: string[]): Promise<Record<string, PostStats>> {

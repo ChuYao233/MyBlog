@@ -1,19 +1,35 @@
 import type { APIRoute } from "astro";
-import { loadStats, incrementViews, hasVisitor, incrementUniqueVisitors } from "../../utils/storage";
+import { getWebsiteStats } from "../../utils/umami-api";
 
-// GET: 获取统计数据
+// GET: 获取统计数据（仅使用 Umami）
 export const GET: APIRoute = async ({ request }) => {
 	try {
-		const stats = await loadStats();
+		const umamiStats = await getWebsiteStats();
+		if (umamiStats) {
+			return new Response(
+				JSON.stringify({
+					uniqueVisitors: umamiStats.uniques.value || 0,
+					totalViews: umamiStats.pageviews.value || 0,
+				}),
+				{
+					headers: {
+						'Content-Type': 'application/json',
+						'Cache-Control': 'public, max-age=300', // 缓存5分钟
+					},
+				}
+			);
+		}
+
+		// 如果 Umami 失败，返回 0
 		return new Response(
 			JSON.stringify({
-				uniqueVisitors: stats.uniqueVisitors,
-				totalViews: stats.totalViews,
+				uniqueVisitors: 0,
+				totalViews: 0,
 			}),
 			{
 				headers: {
 					'Content-Type': 'application/json',
-					'Cache-Control': 'no-cache, no-store, must-revalidate',
+					'Cache-Control': 'public, max-age=300',
 				},
 			}
 		);
@@ -28,71 +44,8 @@ export const GET: APIRoute = async ({ request }) => {
 				status: 200,
 				headers: {
 					'Content-Type': 'application/json',
-					'Cache-Control': 'no-cache, no-store, must-revalidate',
+					'Cache-Control': 'public, max-age=300',
 				},
-			}
-		);
-	}
-};
-
-// POST: 上报访问
-export const POST: APIRoute = async ({ request }) => {
-	try {
-		const body = await request.json();
-		const { visitorId, isNewVisitor } = body;
-		
-		if (!visitorId) {
-			return new Response(
-				JSON.stringify({ error: 'visitorId is required' }),
-				{
-					status: 400,
-					headers: { 'Content-Type': 'application/json' },
-				}
-			);
-		}
-		
-		// 增加总访问数
-		const totalViews = await incrementViews();
-		
-		// 检查是否是新的唯一访客
-		let uniqueVisitors: number;
-		if (isNewVisitor) {
-			const exists = await hasVisitor(visitorId);
-			if (!exists) {
-				uniqueVisitors = await incrementUniqueVisitors();
-			} else {
-				// 如果已存在，加载当前统计
-				const stats = await loadStats();
-				uniqueVisitors = stats.uniqueVisitors;
-			}
-		} else {
-			// 如果不是新访客，只加载当前统计
-			const stats = await loadStats();
-			uniqueVisitors = stats.uniqueVisitors;
-		}
-		
-		return new Response(
-			JSON.stringify({
-				success: true,
-				stats: {
-					uniqueVisitors,
-					totalViews,
-				},
-			}),
-			{
-				headers: {
-					'Content-Type': 'application/json',
-					'Cache-Control': 'no-cache',
-				},
-			}
-		);
-	} catch (error) {
-		console.error('Failed to process visit:', error);
-		return new Response(
-			JSON.stringify({ error: 'Invalid request body' }),
-			{
-				status: 400,
-				headers: { 'Content-Type': 'application/json' },
 			}
 		);
 	}

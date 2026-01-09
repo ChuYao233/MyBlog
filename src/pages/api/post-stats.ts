@@ -1,18 +1,19 @@
 import type { APIRoute } from "astro";
-import { getPostStats, incrementPostViews, recordPostVisitor } from "../../utils/storage";
-
-type PostStatsPayload = {
-	slug?: string;
-	visitorId?: string;
-};
+import { getMultiplePageStats } from "../../utils/umami-api";
+import { getPostUrlBySlug } from "../../utils/url-utils";
 
 const formatResponse = (statsMap: Record<string, { views: number; uniqueVisitors: number }>) =>
 	new Response(JSON.stringify({ stats: statsMap }), {
 		headers: {
 			"Content-Type": "application/json",
-			"Cache-Control": "no-cache, no-store, must-revalidate",
+			"Cache-Control": "public, max-age=300", // 缓存5分钟
 		},
 	});
+
+// 将 slug 转换为文章 URL 路径
+function slugToPath(slug: string): string {
+	return getPostUrlBySlug(slug);
+}
 
 export const GET: APIRoute = async ({ url }) => {
 	try {
@@ -37,12 +38,30 @@ export const GET: APIRoute = async ({ url }) => {
 		}
 
 		const statsMap: Record<string, { views: number; uniqueVisitors: number }> = {};
+		
+		// 将 slugs 转换为 URL 路径
+		const pagePaths = Array.from(slugs).map(slugToPath);
+		
+		// 从 Umami 获取数据（使用 Share URL）
+		const umamiStats = await getMultiplePageStats(pagePaths);
+		
+		// 将 Umami 数据映射回 slug
 		for (const slug of slugs) {
-			const stats = await getPostStats(slug);
-			statsMap[slug] = {
-				views: stats.views,
-				uniqueVisitors: stats.uniqueVisitors,
-			};
+			const pagePath = slugToPath(slug);
+			const umamiData = umamiStats[pagePath];
+			
+			if (umamiData) {
+				statsMap[slug] = {
+					views: umamiData.pageviews.value || 0,
+					uniqueVisitors: umamiData.uniques.value || 0,
+				};
+			} else {
+				// 如果 Umami 没有数据，返回 0
+				statsMap[slug] = {
+					views: 0,
+					uniqueVisitors: 0,
+				};
+			}
 		}
 
 		return formatResponse(statsMap);
@@ -50,51 +69,6 @@ export const GET: APIRoute = async ({ url }) => {
 		console.error("Failed to get post stats:", error);
 		return new Response(JSON.stringify({ error: "Internal Server Error" }), {
 			status: 500,
-			headers: { "Content-Type": "application/json" },
-		});
-	}
-};
-
-export const POST: APIRoute = async ({ request }) => {
-	try {
-		const body = (await request.json()) as PostStatsPayload;
-		const slug = body.slug?.trim();
-		const visitorId = body.visitorId?.trim();
-
-		if (!slug) {
-			return new Response(JSON.stringify({ error: "slug is required" }), {
-				status: 400,
-				headers: { "Content-Type": "application/json" },
-			});
-		}
-
-		// 增加浏览量
-		let stats = await incrementPostViews(slug);
-
-		// 记录唯一访客
-		if (visitorId) {
-			stats = await recordPostVisitor(slug, visitorId);
-		}
-
-		return new Response(
-			JSON.stringify({
-				success: true,
-				stats: {
-					views: stats.views,
-					uniqueVisitors: stats.uniqueVisitors,
-				},
-			}),
-			{
-				headers: {
-					"Content-Type": "application/json",
-					"Cache-Control": "no-cache",
-				},
-			}
-		);
-	} catch (error) {
-		console.error("Failed to process post stats:", error);
-		return new Response(JSON.stringify({ error: "Invalid request body" }), {
-			status: 400,
 			headers: { "Content-Type": "application/json" },
 		});
 	}

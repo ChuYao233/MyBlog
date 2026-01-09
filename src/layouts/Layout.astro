@@ -155,6 +155,9 @@ const bannerOffset =
 
 		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
 
+		<!-- Umami Analytics -->
+		<script defer src="https://umami.2o.nz/script.js" data-website-id="57dfcb66-5348-4920-8e8c-75f6d8991922"></script>
+
 	</head>
 	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
 		  data-overlayscrollbars-initialize
@@ -439,6 +442,11 @@ const setup = () => {
 		const heightExtend = document.getElementById('page-height-extend')
 		if (heightExtend) {
 			heightExtend.classList.remove('hidden')
+		}
+
+		// Track page view with Umami for SPA navigation
+		if (typeof window.umami !== 'undefined' && window.umami.track) {
+			window.umami.track(window.location.pathname + window.location.search);
 		}
 	});
 	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
