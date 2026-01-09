@@ -32,8 +32,8 @@ export default defineConfig({
 	trailingSlash: "always",
 	// 使用 Cloudflare 适配器，支持 API 路由等服务端功能
 	adapter: cloudflare(),
-	// 混合输出：普通页面走静态构建，API 等走服务端
-	output: "hybrid",
+	// Astro 5 仅支持 "static" 或 "server"，这里使用服务端模式以支持 API 路由
+	output: "server",
 	integrations: [
 		tailwind({
 			nesting: true,
