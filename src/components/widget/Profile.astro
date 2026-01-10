@@ -3,23 +3,8 @@ import { Icon } from "astro-icon/components";
 import { profileConfig } from "../../config";
 import { url } from "../../utils/url-utils";
 import ImageWrapper from "../misc/ImageWrapper.astro";
-import { getWebsiteStats } from "../../utils/umami-api";
 
 const config = profileConfig;
-
-// 在服务器端获取统计数据（不受 CORS 限制）
-let visitorStats = { uniqueVisitors: 0, totalViews: 0 };
-try {
-	const umamiStats = await getWebsiteStats();
-	if (umamiStats) {
-		visitorStats = {
-			uniqueVisitors: umamiStats.uniques.value || 0,
-			totalViews: umamiStats.pageviews.value || 0,
-		};
-	}
-} catch (error) {
-	console.error('[Profile.astro] Failed to fetch visitor stats on server:', error);
-}
 ---
 <div class="card-base p-3">
     <a aria-label="Go to About Page" href={url('/about/')}
@@ -54,16 +39,14 @@ try {
             <div class="flex items-center gap-1.5">
                 <Icon name="fa6-regular:user" class="text-base"></Icon>
                 <span>访客数:</span>
-                <span id="visitor-stats-visitors" class="font-medium cursor-help" data-visitors={visitorStats.uniqueVisitors}>-</span>
+                <span id="visitor-stats-visitors" class="font-medium cursor-help">-</span>
             </div>
             <div class="flex items-center gap-1.5">
                 <Icon name="fa6-regular:eye" class="text-base"></Icon>
                 <span>访问量:</span>
-                <span id="visitor-stats-views" class="font-medium cursor-help" data-views={visitorStats.totalViews}>-</span>
+                <span id="visitor-stats-views" class="font-medium cursor-help">-</span>
             </div>
         </div>
-        <script type="application/json" id="visitor-stats-data" set:html={JSON.stringify(visitorStats)}>
-        </script>
     </div>
 </div>
 
@@ -106,33 +89,110 @@ try {
         }
     }
     
-    // 初始化访客统计（从服务器端注入的数据）
-    (function() {
-        function initVisitorStats() {
-            try {
-                // 从 script 标签中读取服务器端获取的数据
-                const dataScript = document.getElementById('visitor-stats-data');
-                let stats = { uniqueVisitors: 0, totalViews: 0 };
-                
-                if (dataScript && dataScript.textContent) {
-                    try {
-                        const rawData = dataScript.textContent.trim();
-                        stats = JSON.parse(rawData);
-                    } catch (e) {
-                        console.error('Failed to parse visitor stats data:', e, 'Raw data:', dataScript.textContent);
-                    }
-                } else {
-                    console.warn('未找到 visitor-stats-data 脚本标签');
+    // Umami API 客户端函数
+    const UMAMI_BASE_URL = 'https://umami.2o.nz';
+    const SHARE_ID = 'kek80GxcLVqvtJRg';
+    let shareDataCache = null;
+    const SHARE_CACHE_TTL = 3600_000; // 1小时
+    
+    async function getUmamiShareData() {
+        const now = Date.now();
+        if (shareDataCache && (now - shareDataCache.timestamp) < SHARE_CACHE_TTL) {
+            return shareDataCache.data;
+        }
+        
+        const url = `${UMAMI_BASE_URL}/api/share/${SHARE_ID}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`获取 Umami 分享信息失败: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        shareDataCache = { data, timestamp: now };
+        return data;
+    }
+    
+    async function getWebsiteStatsClient() {
+        try {
+            const { websiteId, token } = await getUmamiShareData();
+            const currentTimestamp = Date.now();
+            
+            const params = new URLSearchParams({
+                startAt: '0',
+                endAt: currentTimestamp.toString(),
+                unit: 'hour',
+                timezone: 'Asia/Shanghai',
+                compare: 'false',
+            });
+            
+            const statsUrl = `${UMAMI_BASE_URL}/api/websites/${websiteId}/stats?${params.toString()}`;
+            const response = await fetch(statsUrl, {
+                headers: {
+                    'x-umami-share-token': token,
+                },
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    shareDataCache = null;
+                    return await getWebsiteStatsClient();
                 }
-                
-                // 更新显示
+                throw new Error(`获取统计数据失败: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const pageviewsValue = typeof data.pageviews === 'object' && data.pageviews !== null 
+                ? data.pageviews.value 
+                : (data.pageviews || 0);
+            const visitorsValue = typeof data.visitors === 'object' && data.visitors !== null 
+                ? data.visitors.value 
+                : (data.visitors || 0);
+            
+            return {
+                pageviews: { value: pageviewsValue },
+                uniques: { value: visitorsValue },
+            };
+        } catch (error) {
+            console.error('Failed to fetch Umami website stats:', error);
+            return null;
+        }
+    }
+    
+    // 在客户端实时获取访客统计
+    (function() {
+        async function initVisitorStats() {
+            try {
+                // 显示加载状态
                 const viewsEl = document.getElementById('visitor-stats-views');
                 const visitorsEl = document.getElementById('visitor-stats-visitors');
                 
-                updateStatDisplay(viewsEl, stats.totalViews);
-                updateStatDisplay(visitorsEl, stats.uniqueVisitors);
+                if (viewsEl) viewsEl.textContent = '...';
+                if (visitorsEl) visitorsEl.textContent = '...';
+                
+                // 从客户端 API 获取实时数据
+                const umamiStats = await getWebsiteStatsClient();
+                
+                if (umamiStats) {
+                    const stats = {
+                        uniqueVisitors: umamiStats.uniques.value || 0,
+                        totalViews: umamiStats.pageviews.value || 0,
+                    };
+                    
+                    // 更新显示
+                    updateStatDisplay(viewsEl, stats.totalViews);
+                    updateStatDisplay(visitorsEl, stats.uniqueVisitors);
+                } else {
+                    // 如果获取失败，显示默认值
+                    if (viewsEl) viewsEl.textContent = '-';
+                    if (visitorsEl) visitorsEl.textContent = '-';
+                }
             } catch (error) {
-                console.error('Failed to initialize visitor stats:', error);
+                console.error('Failed to fetch visitor stats:', error);
+                // 出错时显示默认值
+                const viewsEl = document.getElementById('visitor-stats-views');
+                const visitorsEl = document.getElementById('visitor-stats-visitors');
+                if (viewsEl) viewsEl.textContent = '-';
+                if (visitorsEl) visitorsEl.textContent = '-';
             }
         }
         

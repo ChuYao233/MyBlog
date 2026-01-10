@@ -2,45 +2,14 @@
 import type { CollectionEntry } from "astro:content";
 import { getPostUrlBySlug } from "@utils/url-utils";
 import PostCard from "./PostCard.astro";
-import { getMultiplePageStats } from "../utils/umami-api";
 
 const { page } = Astro.props;
 
 let delay = 0;
 const interval = 50;
 const slugs = page.data.map((entry: CollectionEntry<"posts">) => entry.slug);
-
-// 在服务器端获取文章统计数据（不受 CORS 限制）
-let postStatsMap: Record<string, { views: number; uniqueVisitors: number }> = {};
-try {
-	const uniqueSlugs = Array.from(new Set(slugs)).filter(Boolean);
-	const pagePaths = uniqueSlugs.map(getPostUrlBySlug);
-	const umamiStats = await getMultiplePageStats(pagePaths);
-	
-	// 将 Umami 数据映射回 slug
-	for (const slug of uniqueSlugs) {
-		const pagePath = getPostUrlBySlug(slug);
-		const umamiData = umamiStats[pagePath];
-		
-		if (umamiData) {
-			postStatsMap[slug] = {
-				views: umamiData.pageviews.value || 0,
-				uniqueVisitors: umamiData.uniques.value || 0,
-			};
-		} else {
-			postStatsMap[slug] = {
-				views: 0,
-				uniqueVisitors: 0,
-			};
-		}
-	}
-} catch (error) {
-	console.debug("Failed to fetch post stats on server:", error);
-	// 如果失败，为所有文章设置默认值
-	for (const slug of slugs) {
-		postStatsMap[slug] = { views: 0, uniqueVisitors: 0 };
-	}
-}
+const uniqueSlugs = Array.from(new Set(slugs)).filter(Boolean);
+const pagePaths = uniqueSlugs.map(getPostUrlBySlug);
 ---
 <div class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4 mb-4">
     {page.data.map((entry: CollectionEntry<"posts">) => (
@@ -61,7 +30,7 @@ try {
     ))}
 </div>
 
-<script type="application/json" id="post-stats-data" set:html={JSON.stringify(postStatsMap)}>
+<script type="application/json" id="post-paths-data" set:html={JSON.stringify({ slugs: uniqueSlugs, paths: pagePaths })}>
 </script>
 
 <script>
@@ -91,35 +60,151 @@ try {
         }
     }
 
-    // 从服务器端注入的数据中读取统计数据
+    // Umami API 客户端函数
+    const UMAMI_BASE_URL = 'https://umami.2o.nz';
+    const SHARE_ID = 'kek80GxcLVqvtJRg';
+    let shareDataCache = null;
+    const SHARE_CACHE_TTL = 3600_000; // 1小时
+    
+    async function getUmamiShareData() {
+        const now = Date.now();
+        if (shareDataCache && (now - shareDataCache.timestamp) < SHARE_CACHE_TTL) {
+            return shareDataCache.data;
+        }
+        
+        const url = `${UMAMI_BASE_URL}/api/share/${SHARE_ID}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`获取 Umami 分享信息失败: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        shareDataCache = { data, timestamp: now };
+        return data;
+    }
+    
+    async function getPageStatsClient(pagePath) {
+        try {
+            const { websiteId, token } = await getUmamiShareData();
+            const currentTimestamp = Date.now();
+            
+            const params = new URLSearchParams({
+                startAt: '0',
+                endAt: currentTimestamp.toString(),
+                unit: 'hour',
+                timezone: 'Asia/Shanghai',
+                compare: 'false',
+                path: `eq.${pagePath}`,
+            });
+            
+            const statsUrl = `${UMAMI_BASE_URL}/api/websites/${websiteId}/stats?${params.toString()}`;
+            const response = await fetch(statsUrl, {
+                headers: {
+                    'x-umami-share-token': token,
+                },
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    shareDataCache = null;
+                    return await getPageStatsClient(pagePath);
+                }
+                return null;
+            }
+            
+            const data = await response.json();
+            const pageviewsValue = typeof data.pageviews === 'object' && data.pageviews !== null 
+                ? data.pageviews.value 
+                : (data.pageviews || 0);
+            const visitorsValue = typeof data.visitors === 'object' && data.visitors !== null 
+                ? data.visitors.value 
+                : (data.visitors || 0);
+            
+            return {
+                pageviews: { value: pageviewsValue },
+                uniques: { value: visitorsValue },
+            };
+        } catch (error) {
+            console.error(`Failed to fetch Umami page stats for ${pagePath}:`, error);
+            return null;
+        }
+    }
+    
+    async function getMultiplePageStatsClient(pagePaths) {
+        const result = {};
+        const promises = pagePaths.map(async (path) => {
+            const stats = await getPageStatsClient(path);
+            if (stats) {
+                result[path] = stats;
+            } else {
+                result[path] = { pageviews: { value: 0 }, uniques: { value: 0 } };
+            }
+        });
+        await Promise.all(promises);
+        return result;
+    }
+
+    // 在客户端实时获取文章统计数据
     (function () {
         if (typeof window === "undefined") return;
         
-        function initPostStats() {
+        async function initPostStats() {
             try {
-                // 从 script 标签中读取服务器端获取的数据
-                const dataScript = document.getElementById('post-stats-data');
-                let statsMap: Record<string, { views: number; uniqueVisitors: number }> = {};
+                // 从 script 标签中读取文章路径数据
+                const dataScript = document.getElementById('post-paths-data');
+                let slugs = [];
+                let pagePaths = [];
                 
                 if (dataScript && dataScript.textContent) {
                     try {
                         const rawData = dataScript.textContent.trim();
-                        statsMap = JSON.parse(rawData);
+                        const data = JSON.parse(rawData);
+                        slugs = data.slugs || [];
+                        pagePaths = data.paths || [];
                     } catch (e) {
-                        console.error('Failed to parse post stats data:', e, 'Raw data:', dataScript.textContent);
+                        console.error('Failed to parse post paths data:', e);
+                        return;
                     }
                 } else {
-                    console.warn('未找到 post-stats-data 脚本标签');
+                    console.warn('未找到 post-paths-data 脚本标签');
+                    return;
                 }
                 
-                // 更新所有文章卡片的统计
+                // 显示加载状态
                 const cards = document.querySelectorAll("[data-post-slug]");
+                cards.forEach((card) => {
+                    const statBox = card.querySelector("[data-post-stats]");
+                    if (statBox) {
+                        const viewsEl = statBox.querySelector(".post-views");
+                        const visitorsEl = statBox.querySelector(".post-visitors");
+                        if (viewsEl) viewsEl.textContent = '...';
+                        if (visitorsEl) visitorsEl.textContent = '...';
+                    }
+                });
                 
+                // 获取所有文章的统计数据
+                const umamiStats = await getMultiplePageStatsClient(pagePaths);
+                
+                // 将 Umami 数据映射回 slug 并更新显示
                 cards.forEach((card) => {
                     const slug = card.getAttribute("data-post-slug");
-                    const stats = statsMap?.[slug || ""] || null;
-                    const statBox = card.querySelector("[data-post-stats]");
-                    updateStat(statBox, stats);
+                    const slugIndex = slugs.indexOf(slug);
+                    if (slugIndex >= 0 && slugIndex < pagePaths.length) {
+                        const pagePath = pagePaths[slugIndex];
+                        const umamiData = umamiStats[pagePath];
+                        
+                        if (umamiData) {
+                            const stats = {
+                                views: umamiData.pageviews.value || 0,
+                                uniqueVisitors: umamiData.uniques.value || 0,
+                            };
+                            const statBox = card.querySelector("[data-post-stats]");
+                            updateStat(statBox, stats);
+                        } else {
+                            const statBox = card.querySelector("[data-post-stats]");
+                            updateStat(statBox, { views: 0, uniqueVisitors: 0 });
+                        }
+                    }
                 });
             } catch (error) {
                 console.error("Failed to load post stats:", error);
