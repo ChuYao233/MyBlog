@@ -27,7 +27,7 @@ import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-cop
 
 // https://astro.build/config
 export default defineConfig({
-	site: "https://fuwari.vercel.app/",
+	site: import.meta.env.PUBLIC_SITE_URL || "https://fuwari.vercel.app/",
 	base: "/",
 	trailingSlash: "always",
 	// 部署在 ESA 等纯静态环境，所以使用静态输出

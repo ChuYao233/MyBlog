@@ -18,11 +18,14 @@ function stripInvalidXmlChars(str: string): string {
 
 export async function GET(context: APIContext) {
 	const blog = await getSortedPosts();
+	// 根据实际访问的域名动态生成站点 URL
+	const requestUrl = new URL(context.request.url);
+	const siteUrl = `${requestUrl.protocol}//${requestUrl.host}/`;
 
 	return rss({
 		title: siteConfig.title,
 		description: siteConfig.subtitle || "No description",
-		site: context.site ?? "https://fuwari.vercel.app",
+		site: siteUrl,
 		items: blog.map((post) => {
 			const content =
 				typeof post.body === "string" ? post.body : String(post.body || "");

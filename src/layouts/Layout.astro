@@ -153,7 +153,7 @@ const bannerOffset =
 
 		<slot name="head"></slot>
 
-		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
+		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.url.origin}/rss.xml`}/>
 
 		<!-- Umami Analytics -->
 		<script defer src="https://umami.2o.nz/script.js" data-website-id="57dfcb66-5348-4920-8e8c-75f6d8991922"></script>
