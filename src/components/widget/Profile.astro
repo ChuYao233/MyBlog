@@ -76,16 +76,56 @@ const config = profileConfig;
     }
     
     /**
-     * 更新统计显示
+     * 老虎机滚动数字动画
+     * @param {HTMLElement} element - 要更新的元素
+     * @param {number} targetValue - 目标数值
+     * @param {number} duration - 动画时长（毫秒），默认1500ms
+     */
+    function animateNumber(element, targetValue, duration = 1500) {
+        if (!element) return;
+        
+        const startValue = 0;
+        const startTime = performance.now();
+        
+        // 缓动函数：easeOutCubic，让动画开始快，结束慢
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutCubic(progress);
+            
+            // 计算当前值
+            const currentValue = Math.floor(startValue + (targetValue - startValue) * easedProgress);
+            
+            // 更新显示
+            const formatted = formatNumber(currentValue);
+            element.textContent = formatted;
+            element.title = targetValue.toLocaleString();
+            
+            // 如果还没到达目标值，继续动画
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            } else {
+                // 确保最终显示目标值
+                element.textContent = formatNumber(targetValue);
+                element.title = targetValue.toLocaleString();
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+    
+    /**
+     * 更新统计显示（带动画）
      * @param {HTMLElement} element - 要更新的元素
      * @param {number} value - 原始数值
      */
     function updateStatDisplay(element, value) {
         if (element) {
-            const formatted = formatNumber(value);
-            element.textContent = formatted;
-            // 添加 title 属性，hover 时显示原始数据
-            element.title = value.toLocaleString();
+            animateNumber(element, value);
         }
     }
     
@@ -166,8 +206,8 @@ const config = profileConfig;
                 const viewsEl = document.getElementById('visitor-stats-views');
                 const visitorsEl = document.getElementById('visitor-stats-visitors');
                 
-                if (viewsEl) viewsEl.textContent = '...';
-                if (visitorsEl) visitorsEl.textContent = '...';
+                if (viewsEl) viewsEl.textContent = '0';
+                if (visitorsEl) visitorsEl.textContent = '0';
                 
                 // 从客户端 API 获取实时数据
                 const umamiStats = await getWebsiteStatsClient();

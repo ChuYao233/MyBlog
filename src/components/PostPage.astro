@@ -46,17 +46,58 @@ const pagePaths = uniqueSlugs.map(getPostUrlBySlug);
         return num.toString();
     }
 
+    /**
+     * 老虎机滚动数字动画
+     * @param {HTMLElement} element - 要更新的元素
+     * @param {number} targetValue - 目标数值
+     * @param {number} duration - 动画时长（毫秒），默认1500ms
+     */
+    function animateNumber(element, targetValue, duration = 1500) {
+        if (!element) return;
+        
+        const startValue = 0;
+        const startTime = performance.now();
+        
+        // 缓动函数：easeOutCubic，让动画开始快，结束慢
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutCubic(progress);
+            
+            // 计算当前值
+            const currentValue = Math.floor(startValue + (targetValue - startValue) * easedProgress);
+            
+            // 更新显示
+            const formatted = formatNumber(currentValue);
+            element.textContent = formatted;
+            element.title = targetValue.toLocaleString();
+            
+            // 如果还没到达目标值，继续动画
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            } else {
+                // 确保最终显示目标值
+                element.textContent = formatNumber(targetValue);
+                element.title = targetValue.toLocaleString();
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+
     function updateStat(container, stats) {
         if (!container || !stats) return;
         const viewsEl = container.querySelector(".post-views");
         const visitorsEl = container.querySelector(".post-visitors");
         if (viewsEl) {
-            viewsEl.textContent = formatNumber(stats.views || 0);
-            viewsEl.title = (stats.views || 0).toLocaleString();
+            animateNumber(viewsEl, stats.views || 0);
         }
         if (visitorsEl) {
-            visitorsEl.textContent = formatNumber(stats.uniqueVisitors || 0);
-            visitorsEl.title = (stats.uniqueVisitors || 0).toLocaleString();
+            animateNumber(visitorsEl, stats.uniqueVisitors || 0);
         }
     }
 
@@ -170,15 +211,15 @@ const pagePaths = uniqueSlugs.map(getPostUrlBySlug);
                     return;
                 }
                 
-                // 显示加载状态
+                // 显示初始状态（从0开始）
                 const cards = document.querySelectorAll("[data-post-slug]");
                 cards.forEach((card) => {
                     const statBox = card.querySelector("[data-post-stats]");
                     if (statBox) {
                         const viewsEl = statBox.querySelector(".post-views");
                         const visitorsEl = statBox.querySelector(".post-visitors");
-                        if (viewsEl) viewsEl.textContent = '...';
-                        if (visitorsEl) visitorsEl.textContent = '...';
+                        if (viewsEl) viewsEl.textContent = '0';
+                        if (visitorsEl) visitorsEl.textContent = '0';
                     }
                 });
                 
