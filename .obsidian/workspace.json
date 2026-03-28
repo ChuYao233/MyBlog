@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "src/content/posts/guide/index.md",
+                "file": "src/content/posts/randompicapi/index.md",
                 "mode": "source",
                 "source": false
               },
@@ -185,6 +185,13 @@
   },
   "active": "b9b89297fef2530f",
   "lastOpenFiles": [
+    "src/content/posts/cdngeouse/index.md",
+    "src/content/posts/randompicapi/index.md",
+    "src/content/posts/cdngeouse/images/cfsaasfall.avif",
+    "src/content/posts/randompicapi",
+    "src/content/posts/cdngeouse/images/alidns.avif",
+    "src/content/spec/about.md",
+    "src/content/sponsors/README.md",
     "src/content/links/kaze943.yaml",
     "src/content/links/example copy.yaml",
     "src/content/posts/guide/cover.jpeg",
@@ -197,14 +204,10 @@
     "src/content/posts/guide/images/cfsaasfall.avif",
     "src/content/posts/guide/images/QQ_1767950457315.png",
     "src/content/posts/guide/images/cfyunsett.avif",
-    "src/content/posts/guide/images/cfyunsett.png",
-    "src/content/posts/guide/images/alidns.avif",
     "().md",
     "src/content/posts/guide/images",
     "CONTRIBUTING.md",
     "2026-01-09.md",
-    "src/content/spec/about.md",
-    "src/content/sponsors/README.md",
     "src/content/spec/sponsor.md",
     "docs/README.es.md",
     "README.md"
