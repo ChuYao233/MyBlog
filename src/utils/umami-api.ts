@@ -7,7 +7,7 @@ const getUmamiBaseUrl = (): string => {
 };
 
 const getShareId = (): string => {
-	return 'kek80GxcLVqvtJRg';
+	return 'MZlkKG3R5ChKfJJd';
 };
 
 interface UmamiShareResponse {
